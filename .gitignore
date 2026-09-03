@@ -1,0 +1,22 @@
+# macOS and editor metadata
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+.env
+
+# Third-party ICU dataset (download separately; do not redistribute via Git)
+release/icu_records/
+release/outcomes.csv
+*.zip
+*.tar
+*.tar.gz
