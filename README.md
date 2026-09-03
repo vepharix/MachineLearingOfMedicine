@@ -34,7 +34,7 @@ release/
 - [`EDA/CORRELATION_REPORT.md`](EDA/CORRELATION_REPORT.md)：SAPS-I、SOFA、死亡时间、住院时间和院内死亡的 Pearson/Spearman 相关性。
 - `EDA/output/Distribution/`：EDA 汇总表和图像。
 - `EDA/output/correlation/`：相关性矩阵、六组散点图和数值结果。
-- [`Experiments/01_length_of_stay_by_mortality/`](Experiments/01_length_of_stay_by_mortality/)：第一步实验，按是否院内死亡拆分并比较住院时间。
+- [`Experiments/01_length_of_stay_by_mortality/`](Experiments/01_length_of_stay_by_mortality/)：第一步实验，按是否院内死亡拆分，比较 SAPS-I、SOFA 与住院时间的关系。
 
 分析结果仅用于数据研究，不构成临床判断或医疗建议。
 
