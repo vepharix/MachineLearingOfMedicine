@@ -20,3 +20,6 @@ release/outcomes.csv
 *.zip
 *.tar
 *.tar.gz
+
+# Patient-level experiment splits generated from the ignored source data
+Experiments/**/output/data/*.csv
