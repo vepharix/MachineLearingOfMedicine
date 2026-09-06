@@ -21,5 +21,5 @@ release/outcomes.csv
 *.tar
 *.tar.gz
 
-# Patient-level experiment splits generated from the ignored source data
-Experiments/**/output/data/*.csv
+# Patient-level features, caches, splits and predictions generated from the ignored source data
+Experiments/**/output/data/*

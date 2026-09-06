@@ -37,6 +37,7 @@ release/
 - `EDA/output/correlation/`：相关性矩阵、六组散点图和数值结果。
 - [`Experiments/01_length_of_stay_by_mortality/`](Experiments/01_length_of_stay_by_mortality/)：第一步实验，按是否院内死亡拆分，比较 SAPS-I、SOFA 与住院时间的关系。
 - [`Experiments/02_mortality_prediction_baseline/`](Experiments/02_mortality_prediction_baseline/)：使用前 6、12、24、48 小时原始记录建立院内死亡预测基线，并与静态信息和 SAPS-I/SOFA 参照模型比较。
+- [`Experiments/03_mortality_data_quality/`](Experiments/03_mortality_data_quality/)：在固定死亡标签和患者划分下，系统比较缺失填补、缺失指示、宽松异常值清洗、分位数截断、标签敏感性、校准和亚组稳定性。
 
 分析结果仅用于数据研究，不构成临床判断或医疗建议。
 
@@ -52,6 +53,9 @@ python EDA/eda.py
 python EDA/correlation_analysis.py
 python Experiments/01_length_of_stay_by_mortality/run_experiment.py
 python Experiments/02_mortality_prediction_baseline/run_experiment.py
+python Experiments/03_mortality_data_quality/run_experiment.py
+python Experiments/03_mortality_data_quality/analyze_selected_models.py
+python Experiments/03_mortality_data_quality/plot_results.py
 ```
 
 脚本只读取 `release/` 中的原始数据，不会修改它们。

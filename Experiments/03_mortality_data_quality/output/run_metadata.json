@@ -1,0 +1,182 @@
+{
+  "record_count": 12000,
+  "death_count": 1707,
+  "random_state": 20260904,
+  "horizons_hours": [
+    6,
+    12,
+    24,
+    48
+  ],
+  "screening_horizon_hours": 24,
+  "cv_folds": 5,
+  "bootstrap_iterations": 1000,
+  "split_sizes": {
+    "train": 8400,
+    "validation": 1800,
+    "test": 1800
+  },
+  "feature_columns": 341,
+  "selected_configs": {
+    "logistic": "clean_winsor_median_indicator",
+    "hist_gradient_boosting": "raw_median"
+  },
+  "candidate_configs": {
+    "logistic": [
+      "raw_winsor_median_indicator",
+      "clean_winsor_median_indicator",
+      "raw_median_indicator"
+    ],
+    "hist_gradient_boosting": [
+      "raw_median_indicator",
+      "raw_median"
+    ]
+  },
+  "configs": [
+    {
+      "name": "raw_median",
+      "feature_profile": "raw",
+      "imputer_strategy": "median",
+      "add_indicator": false,
+      "winsorize": false
+    },
+    {
+      "name": "raw_median_indicator",
+      "feature_profile": "raw",
+      "imputer_strategy": "median",
+      "add_indicator": true,
+      "winsorize": false
+    },
+    {
+      "name": "raw_mean_indicator",
+      "feature_profile": "raw",
+      "imputer_strategy": "mean",
+      "add_indicator": true,
+      "winsorize": false
+    },
+    {
+      "name": "raw_native_missing",
+      "feature_profile": "raw",
+      "imputer_strategy": null,
+      "add_indicator": false,
+      "winsorize": false
+    },
+    {
+      "name": "raw_winsor_median_indicator",
+      "feature_profile": "raw",
+      "imputer_strategy": "median",
+      "add_indicator": true,
+      "winsorize": true
+    },
+    {
+      "name": "clean_median_indicator",
+      "feature_profile": "clean",
+      "imputer_strategy": "median",
+      "add_indicator": true,
+      "winsorize": false
+    },
+    {
+      "name": "clean_winsor_median_indicator",
+      "feature_profile": "clean",
+      "imputer_strategy": "median",
+      "add_indicator": true,
+      "winsorize": true
+    }
+  ],
+  "strict_bounds": {
+    "Height": [
+      100.0,
+      250.0,
+      true
+    ],
+    "InitialWeight": [
+      20.0,
+      300.0,
+      true
+    ],
+    "Weight": [
+      20.0,
+      300.0,
+      true
+    ],
+    "HR": [
+      0.0,
+      250.0,
+      false
+    ],
+    "Temp": [
+      25.0,
+      45.0,
+      true
+    ],
+    "GCS": [
+      3.0,
+      15.0,
+      true
+    ],
+    "pH": [
+      6.5,
+      8.0,
+      true
+    ],
+    "RespRate": [
+      0.0,
+      80.0,
+      false
+    ],
+    "FiO2": [
+      0.0,
+      1.0,
+      false
+    ],
+    "SaO2": [
+      0.0,
+      100.0,
+      false
+    ],
+    "DiasABP": [
+      0.0,
+      300.0,
+      false
+    ],
+    "MAP": [
+      0.0,
+      300.0,
+      false
+    ],
+    "SysABP": [
+      0.0,
+      300.0,
+      false
+    ],
+    "NIDiasABP": [
+      0.0,
+      300.0,
+      false
+    ],
+    "NIMAP": [
+      0.0,
+      300.0,
+      false
+    ],
+    "NISysABP": [
+      0.0,
+      300.0,
+      false
+    ]
+  },
+  "hard_outcome_anomalies": 95,
+  "extraction_seconds": 672.0287458999665,
+  "scikit_learn_version": "1.9.0",
+  "hard_outcome_anomalies_by_split": {
+    "train": 67,
+    "validation": 18,
+    "test": 10
+  },
+  "secondary_outputs": [
+    "calibration_metrics.csv",
+    "calibration_curve.csv",
+    "subgroup_metrics.csv",
+    "feature_ablation_metrics.csv"
+  ]
+}
