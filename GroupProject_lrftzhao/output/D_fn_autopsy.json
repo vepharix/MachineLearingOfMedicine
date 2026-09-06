@@ -1,0 +1,77 @@
+{
+  "threshold_sens90": 0.08060174699974117,
+  "n_test": 2400,
+  "n_deaths": 341,
+  "FN": 44,
+  "TP": 297,
+  "FP": 730,
+  "TN": 1329,
+  "FN_p_logreg": {
+    "median": 0.047070494572686,
+    "q25": 0.026838665142182774,
+    "q75": 0.06889504976280683,
+    "would_be_caught_at_sens95": 17,
+    "below_half_threshold": 17
+  },
+  "FN_icu_mix": {
+    "CCU": 0.295,
+    "MICU": 0.273,
+    "CSRU": 0.227,
+    "SICU": 0.205
+  },
+  "TP_icu_mix": {
+    "MICU": 0.519,
+    "SICU": 0.343,
+    "CCU": 0.101,
+    "CSRU": 0.037
+  },
+  "measured_share_FN_vs_TP": {
+    "Lactate": [
+      0.45454545454545453,
+      0.7710437710437711
+    ],
+    "TroponinT": [
+      0.13636363636363635,
+      0.39730639730639733
+    ],
+    "Albumin": [
+      0.38636363636363635,
+      0.5656565656565656
+    ],
+    "Bilirubin": [
+      0.5681818181818182,
+      0.622895622895623
+    ],
+    "pH": [
+      0.7045454545454546,
+      0.9023569023569024
+    ]
+  },
+  "n_vars_FN_closer_to_TN": 17,
+  "n_vars": 29,
+  "FN_vs_TP_p_uncorrected<0.05": [
+    "Age",
+    "SAPS-I",
+    "SOFA",
+    "GCS_last",
+    "GCS_min",
+    "GCS_delta",
+    "HR_max",
+    "Lactate_last",
+    "Lactate_max",
+    "BUN_last",
+    "Urine_sum",
+    "MechVent_any",
+    "measured_Lactate",
+    "HCO3_min"
+  ],
+  "FN_vs_TP_p_holm<0.05": [
+    "SAPS-I",
+    "SOFA",
+    "GCS_last",
+    "GCS_min",
+    "MechVent_any",
+    "measured_Lactate",
+    "HCO3_min"
+  ]
+}
