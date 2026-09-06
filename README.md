@@ -43,6 +43,10 @@ release/
 
 分析结果仅用于数据研究，不构成临床判断或医疗建议。
 
+## 评分标准与展示
+
+评分看的是 reasoning chain（clinical question → data → preprocessing → model comparison → metric → recommendation），不只看模型分数。仓库里每样东西对到评分标准的哪一条、全组冻结的切分/特征/任务/流程，见 [`Presentation/冻结清单与评分标准映射.md`](Presentation/冻结清单与评分标准映射.md)。展示与 Q&A 材料在 [`GroupProject_lrftzhao/`](GroupProject_lrftzhao/)。
+
 ## 运行
 
 推荐使用 Python 3.11 或更高版本：
