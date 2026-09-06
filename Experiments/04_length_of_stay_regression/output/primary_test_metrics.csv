@@ -1,0 +1,2 @@
+model,horizon_hours,split,fit_sample,training_target,n,mae_days,rmse_days,median_ae_days,r2,spearman
+hist_gradient_boosting_log_target,48,test,train_plus_validation_after_validation_selection,log1p_Length_of_stay,1775,6.677438927925134,13.213700994923128,3.662301822323421,0.09079126576306129,0.5281617405293395

@@ -1,7 +1,9 @@
-# ICU 前 48 小时临床数据：探索性分析、缺失处理与院内死亡预测研究报告
+# ICU 前 48 小时临床数据：探索性分析、死亡预测、住院时长回归与患者分型
 
-**报告版本：** 2026-09-06  
-**研究状态：** 已完成全量 12,000 次 ICU 住院记录的数据审计、探索性分析、住院时长描述实验，以及 6、12、24、48 小时院内死亡预测基线训练。  
+**报告版本：** 2026-09-06
+
+**研究状态：** 已完成全量 12,000 次 ICU 住院记录的数据审计、探索性分析、多时间窗院内死亡预测与住院时长回归，以及 24 小时患者表型聚类。
+
 **使用边界：** 本项目是回顾性方法研究，尚未进行外部验证、前瞻性验证或临床效用评估，结果不能直接用于临床决策。
 
 ## 摘要
@@ -11,6 +13,10 @@
 探索性分析显示，这是一组典型的稀疏、不规则且具有临床选择机制的医疗时序数据。心率、体温、GCS、肾功能和血常规等变量覆盖率接近 98%，而 TroponinI、Cholesterol、TroponinT、RespRate 等变量的覆盖率明显较低。这里的缺失并非都可以看作随机缺失：某项检查是否被开立、何时复查以及复查频率，可能同时反映病情、ICU 工作流程与治疗决策。因此，当前基线没有进行简单的全局前向填充或把缺失填为 0，而是同时保留数值统计、测量次数、距末次测量时间和缺失指示，并把填补器置于模型流程中，仅从训练集学习中位数，避免验证集或测试集的信息进入预处理过程。
 
 预测实验采用固定、按死亡结局分层的训练集、验证集和确认集，样本量分别为 8,400、1,800 和 1,800。每个时间窗均构造 341 个输入特征，比较逻辑回归与直方图梯度提升模型，并另设静态信息模型和 SAPS-I/SOFA 参照模型。结果显示，随着观察时间由 6 小时增加到 48 小时，模型判别能力总体提高；48 小时梯度提升模型取得当前最佳结果：AUROC 0.882（95% CI 0.861–0.900）、AUPRC 0.592（0.536–0.651）、Brier 0.084（0.076–0.093）。第二阶段进一步比较七种填补与清洗组合，没有发现比简单中位数方案更稳定的树模型预处理；逻辑回归在部分时间窗有小幅改善，但没有形成跨时间窗一致优势。当前仍缺少跨医院、跨时间验证，因此这些结果应视为带有内部不确定性评估的研究基线，而不是已经完成临床验证的模型。
+
+在独立的连续结局实验中，排除 167 例缺失 LOS 和 5 例与纳入条件矛盾的 LOS<2 天记录后，共纳入 11,828 例。验证集选择前 48 小时直方图梯度提升模型，合并训练集和验证集重拟合后，测试集 MAE 为 6.68 天（bootstrap 95% CI 6.17–7.24），RMSE 为 13.21 天，R² 为 0.091。模型优于训练集中位数基线，但长住院误差仍大，且院内死亡者的 MAE 高于存活出院者，提示死亡竞争事件不能忽略。
+
+无监督实验使用 24 个 24 小时临床状态特征，经训练集截尾、中位数填补、标准化和 PCA 后比较 k=2–8 的 K-means。按稳定性、最小簇比例和留出集轮廓系数选择 k=4；留出集轮廓系数为 0.119，20 次子样本稳定性 ARI 中位数为 0.980。该结果呈现稳定但重叠明显的粗粒度分组，不能直接解释为四种疾病。簇后死亡率从 8.7% 到 28.3% 不等，但结局未参与建簇，差异只用于描述。
 
 ## 一、研究目的与问题定义
 
@@ -209,6 +215,8 @@ Brier 分数是预测概率与真实 0/1 结局之间平方误差的平均值，
 
 住院时长则是另一个结局，可以开展回归、分位数回归或长住院分类，但要处理右偏、长尾和死亡竞争事件。无监督表型发现没有预先定义的标签，需要以聚类稳定性、临床解释和外部重复性评价。异常检测以识别单位错误、设备伪差和异常录入为目标，也有独立的验证标准。这些任务应在院内死亡二分类的数据处理方案确定后另立实验，避免因问题定义同时变化而无法解释结果。当前第二阶段已经给出这一主线的数据处理结论，其他分支可以在不改写本实验比较逻辑的前提下独立开展。
 
+本仓库当前在独立实验分支上实现了住院时长回归和患者聚类，因此它们不会改变院内死亡二分类的数据清洗比较。对应代码和完整结果分别位于 `Experiments/04_length_of_stay_regression/` 与 `Experiments/05_patient_phenotype_clustering/`；实验编号 03 保留给另一分支上的死亡数据质量与填补方案。
+
 ## 十一、局限性
 
 第一，当前确认结果仍来自单次固定内部划分。第二阶段虽然使用训练集五折筛选并为确认集指标提供 1,000 次 Bootstrap 置信区间，但这些区间没有完整传播“候选方案选择”带来的不确定性；同一确认集也已经在实验 02 查看过基线结果，因此不是理想的全程盲测集。第二，本地数据没有医院、日期和患者身份，无法验证跨医院泛化、随时间漂移或同一患者重复住院造成的相关性。第三，缺失和测量频率含有临床流程信息，模型可能学习检查习惯；这种信息在同一数据环境下有预测价值，却可能在新医院失效。
@@ -288,6 +296,8 @@ python Experiments/02_mortality_prediction_baseline/run_experiment.py --data-dir
 python Experiments/03_mortality_data_quality/run_experiment.py --data-dir ../release
 python Experiments/03_mortality_data_quality/analyze_selected_models.py --data-dir ../release
 python Experiments/03_mortality_data_quality/plot_results.py
+python Experiments/04_length_of_stay_regression/run_experiment.py --data-dir ../release
+python Experiments/05_patient_phenotype_clustering/run_experiment.py --data-dir ../release
 ```
 
 前三个已有脚本当前固定从仓库内的 `release/` 读取数据；实验 02 和实验 03 支持 `--data-dir`，本次全量训练实际使用了同级的 `../release`。若在另一台机器复现，应遵照根目录 README 准备数据，或为两个死亡预测实验显式指定私有数据目录。
@@ -310,6 +320,8 @@ python Experiments/03_mortality_data_quality/plot_results.py
 | 五折、验证和确认集汇总 | `Experiments/03_mortality_data_quality/output/cv_summary.csv`、`validation_candidates.csv`、`test_metrics.csv` |
 | 标签、校准、消融和亚组结果 | `Experiments/03_mortality_data_quality/output/label_sensitivity_metrics.csv`、`calibration_metrics.csv`、`feature_ablation_metrics.csv`、`subgroup_metrics.csv` |
 | 第二阶段分析与绘图代码 | `Experiments/03_mortality_data_quality/analyze_selected_models.py`、`plot_results.py` |
+| 住院时长回归报告与结果 | `Experiments/04_length_of_stay_regression/README.md`、`output/primary_test_metrics.csv` |
+| 24 小时患者分型报告与结果 | `Experiments/05_patient_phenotype_clustering/README.md`、`output/model_selection_metrics.csv` |
 
 患者级预测、固定划分和第二阶段特征缓存存放在各实验被 Git 忽略的 `output/data/`，避免重新分发患者级原始衍生数据。当前运行环境使用 scikit-learn 1.9.0，随机种子为 20260904；最终特征数、质量计数、候选方案和版本信息也保存在元数据文件中。
 

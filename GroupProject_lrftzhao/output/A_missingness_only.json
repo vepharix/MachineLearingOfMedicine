@@ -1,0 +1,51 @@
+{
+  "reference_test_auc": {
+    "T1_logreg_full_features": 0.846879232722658,
+    "SAPS-I": 0.6416590350068863
+  },
+  "n_measured_indicators": 37,
+  "n_count_columns": 37,
+  "caveat": "48h 内的开单模式部分反映临床团队已察觉的恶化（濒死才查乳酸），是临床关注度的代理而非生理信号；48h 时点已知，非泄漏",
+  "A1_measured_only": {
+    "n_features": 37,
+    "chosen_C": 0.001,
+    "val_auc": 0.6897615353576685,
+    "test": {
+      "auc_roc": 0.69577664185131,
+      "auc_pr": 0.27887072576749095,
+      "brier": 0.1152780408904521,
+      "prevalence": 0.14208333333333334,
+      "n": 2400,
+      "auc_roc_ci95": [
+        0.6655724584657149,
+        0.7226760264040605
+      ]
+    },
+    "link_to_D": {
+      "FN_of_T1_median_score": 0.12361219089617986,
+      "TP_of_T1_median_score": 0.1808270974757248,
+      "survivors_median_score": 0.12805718527816293
+    }
+  },
+  "A2_measured_plus_counts": {
+    "n_features": 75,
+    "chosen_C": 0.01,
+    "val_auc": 0.7291961479662876,
+    "test": {
+      "auc_roc": 0.7397406992261996,
+      "auc_pr": 0.3111293973533091,
+      "brier": 0.11077517121218487,
+      "prevalence": 0.14208333333333334,
+      "n": 2400,
+      "auc_roc_ci95": [
+        0.7143483877395322,
+        0.766223920845183
+      ]
+    },
+    "link_to_D": {
+      "FN_of_T1_median_score": 0.08976495622021723,
+      "TP_of_T1_median_score": 0.21305200406871994,
+      "survivors_median_score": 0.1000280439738398
+    }
+  }
+}
