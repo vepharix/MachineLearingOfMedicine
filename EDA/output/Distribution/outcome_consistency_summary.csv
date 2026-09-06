@@ -1,0 +1,11 @@
+audit_item,record_count,interpretation
+明确违反任一官方约束（唯一记录）,95,互斥总数
+Survival为0或1,91,可与其他项重叠
+Length_of_stay为0或1,5,可与其他项重叠
+Survival小于-1,1,可与其他项重叠
+死亡标签不满足2≤Survival≤LOS,85,可与其他项重叠
+存活标签不满足Survival=-1或Survival>LOS,3,可与其他项重叠
+规则内死亡且LOS-Survival>2天,383,官方规则允许，但需做敏感性分析
+规则内死亡且LOS-Survival>5天,183,官方规则允许，但需做敏感性分析
+规则内死亡且LOS-Survival>10天,83,官方规则允许，但需做敏感性分析
+规则内死亡且LOS-Survival>30天,10,官方规则允许，但需做敏感性分析

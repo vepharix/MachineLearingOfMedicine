@@ -30,11 +30,13 @@ release/
 
 ## 已有分析
 
+- [`RESEARCH_REPORT.md`](RESEARCH_REPORT.md)：从全量 EDA、缺失与异常处理到多时间窗死亡预测训练、指标解释、局限性和后续实验方案的完整研究报告。
 - [`EDA/REPORT.md`](EDA/REPORT.md)：数据完整性、缺失情况、变量覆盖率、分布和院内死亡组间比较。
 - [`EDA/CORRELATION_REPORT.md`](EDA/CORRELATION_REPORT.md)：SAPS-I、SOFA、死亡时间、住院时间和院内死亡的 Pearson/Spearman 相关性。
 - `EDA/output/Distribution/`：EDA 汇总表和图像。
 - `EDA/output/correlation/`：相关性矩阵、六组散点图和数值结果。
 - [`Experiments/01_length_of_stay_by_mortality/`](Experiments/01_length_of_stay_by_mortality/)：第一步实验，按是否院内死亡拆分，比较 SAPS-I、SOFA 与住院时间的关系。
+- [`Experiments/02_mortality_prediction_baseline/`](Experiments/02_mortality_prediction_baseline/)：使用前 6、12、24、48 小时原始记录建立院内死亡预测基线，并与静态信息和 SAPS-I/SOFA 参照模型比较。
 
 分析结果仅用于数据研究，不构成临床判断或医疗建议。
 
@@ -49,6 +51,7 @@ pip install -r requirements.txt
 python EDA/eda.py
 python EDA/correlation_analysis.py
 python Experiments/01_length_of_stay_by_mortality/run_experiment.py
+python Experiments/02_mortality_prediction_baseline/run_experiment.py
 ```
 
 脚本只读取 `release/` 中的原始数据，不会修改它们。

@@ -28,6 +28,12 @@
 
 此外，`RecordID=100348` 的 `Survival=-23`，另有少数 `Length_of_stay` 或 `Survival` 为 0/1，与数据说明中“住院少于 48 小时者已排除”的约束不一致。本报告在生存时间分布中排除了负数异常值，但未改写原始文件。
 
+上述 95 条是全量数据中明确违反官方取值或标签规则的唯一记录数，并非只列举了部分错误。分项统计包括：91 条 `Survival` 为 0/1、5 条 `Length_of_stay` 为 0/1、1 条 `Survival<-1`；各项之间存在重叠。按官方标签逻辑进一步核对，有 85 条死亡记录不满足 `2 ≤ Survival ≤ Length_of_stay`，3 条存活记录不满足 `Survival=-1` 或 `Survival>Length_of_stay`。
+
+此外还存在一类“形式上合规、实际值得怀疑”的记录。在 1,622 条满足官方规则的院内死亡记录中，`Length_of_stay−Survival` 超过 2、5、10 和 30 天的分别为 383、183、83 和 10 条，最大差值 105 天。官方规则允许死亡时间早于住院结束，因此不能把这些记录全部直接判错；后续死亡模型应把它们作为结局质量敏感性分析，而不是在主分析中擅自删除或改标签。
+
+![结局字段一致性审计](output/Distribution/outcome_consistency_audit.png)
+
 ![患者级分布](output/Distribution/patient_distributions.png)
 
 ## 静态变量
@@ -105,4 +111,6 @@
 - `static_variable_summary.csv`、`static_comparison_by_outcome.csv`：静态变量摘要。
 - `outcomes_summary.csv`、`outcomes_missingness.csv`：结局字段摘要。
 - `outcome_anomalies.csv`：违反结局字段取值约束的记录。
+- `outcome_consistency_summary.csv`：硬规则异常与规则内大差值的分层计数。
+- `outcome_consistency_audit.png`：院内死亡记录的死亡时间、住院时长和差值分布。
 - `observation_count_by_hour.csv`：前 48 小时逐小时有效观测数。
