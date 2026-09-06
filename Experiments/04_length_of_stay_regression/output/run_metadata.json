@@ -1,0 +1,38 @@
+{
+  "data_layout": "release/outcomes.csv + release/icu_records/<RecordID>.csv",
+  "source_record_count": 12000,
+  "los_missing_or_minus_one": 167,
+  "los_below_two_days": 5,
+  "valid_los_records": 11828,
+  "horizons_hours": [
+    6,
+    12,
+    24,
+    48
+  ],
+  "feature_count_per_horizon": 341,
+  "split_sizes": {
+    "train": 8279,
+    "validation": 1774,
+    "test": 1775
+  },
+  "selection_rule": "minimum validation MAE; RMSE, horizon and model name break ties",
+  "feature_winsorization": "training 0.5th and 99.5th percentiles",
+  "prediction_bounds": "2 days to the maximum LOS observed in the fitting partition",
+  "selected_model": "hist_gradient_boosting_log_target",
+  "selected_horizon_hours": 48,
+  "bootstrap_repeats": 1000,
+  "random_state": 20260906,
+  "feature_cache_hit": true,
+  "scikit_learn_version": "1.9.0",
+  "quality_counters": {
+    "blank_parameter_rows_skipped": 2403,
+    "minus_one_rows_treated_as_missing": 6963,
+    "rows_at_48_00_excluded": 1412,
+    "same_minute_extra_rows_collapsed_12h": 4688,
+    "same_minute_extra_rows_collapsed_24h": 7857,
+    "same_minute_extra_rows_collapsed_48h": 11791,
+    "same_minute_extra_rows_collapsed_6h": 2743,
+    "source_rows": 5285818
+  }
+}
