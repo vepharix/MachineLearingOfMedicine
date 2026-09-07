@@ -76,6 +76,18 @@
 
 48 小时梯度提升在女性和男性中的 AUROC 分别为 0.867 和 0.894；在 `<45`、`45–64`、`65–79`、`≥80` 岁组中分别为 0.908、0.921、0.852 和 0.837。不同 ICU 类型的 AUROC 为 0.838–0.959，其中 CSRU 的死亡率只有 2.7%，尽管 AUROC 较高，AUPRC 仅为 0.286。由此可以看到，AUPRC 会受到亚组患病率的明显影响，不能脱离样本量和死亡率比较。当前亚组未做多重比较校正和置信区间估计，只用于发现可能的性能异质性，不能作为公平性或临床适用性的定论。明细见 [`output/subgroup_metrics.csv`](output/subgroup_metrics.csv)。
 
+## 补充：工作点、再校准与跨 ICU 压力测试
+
+这部分只扩展最终的 48 小时梯度提升模型，不重复前面的预处理筛选、消融、亚组和标签实验。工作点和留一 ICU 的问题设计参考了协作者 `GroupProject_lrftzhao` 的 T1 与打法 C，但在实验 03 固定划分和已选梯度提升管线下重新计算，因此两边数值不直接比较。在验证集上拟合 Platt 校准后，确认集校准截距由 0.209 接近至 0.045，斜率由 1.106 接近至 1.030，Brier 仅由 0.08423 降至 0.08410；isotonic 没有带来进一步收益。由于校准器仍只来自同一内部验证集，这个结果说明线性重校准可能有用，但不能替代在新医院重新估计概率。
+
+![48小时再校准比较](output/report_figures/calibration_method_comparison.png)
+
+验证集目标灵敏度从 0.70 提高到 0.95 时，确认集每 100 人告警数由 21.5 增至 53.1，漏诊死亡人数由 81 降至 8。它把阈值选择转化为复核容量与漏诊之间的权衡；当前没有真实干预成本和净获益数据，因此不指定唯一“临床最佳阈值”。完整结果见 [`output/threshold_operating_points.csv`](output/threshold_operating_points.csv)。
+
+![灵敏度目标与复核负担](output/report_figures/threshold_tradeoff.png)
+
+留一 ICU 类型压力测试在三类 ICU 上重新训练、在第四类 ICU 的全部记录上评价，并移除 ICU 类型输入。四类留出结果的 AUROC 为 0.815–0.878，平均预测风险在 CSRU 从实际 4.9% 高估到 9.4%，在 MICU 从实际 19.8% 低估到 15.6%。这比固定确认集亚组分析更接近分布变化，但四类 ICU 仍来自同一数据来源，只能称为内部可迁移性压力测试。明细见 [`output/leave_one_icu_out.csv`](output/leave_one_icu_out.csv)。
+
 ## 结论
 
 第二阶段最稳妥的结论是：简单预处理已经足以支撑当前梯度提升基线，宽松异常清洗、分位数截断、均值填补和原生缺失都没有产生跨模型、跨时间窗的一致增益。逻辑回归在部分时间窗可从清洗与截断中获得小幅改善，但差异落在当前抽样不确定性范围内。缺失与测量频率含有真实预测信息，同时也可能编码医院工作流程，因此后续外部验证时应把这类特征视为潜在的分布漂移来源。
@@ -85,8 +97,10 @@
 ```bash
 python Experiments/03_mortality_data_quality/run_experiment.py --data-dir ../release
 python Experiments/03_mortality_data_quality/analyze_selected_models.py --data-dir ../release
+python Experiments/03_mortality_data_quality/analyze_operating_points.py
 python Experiments/03_mortality_data_quality/plot_results.py
 python Experiments/03_mortality_data_quality/test_run_experiment.py
+python Experiments/03_mortality_data_quality/test_analyze_operating_points.py
 ```
 
-主脚本会重新读取 12,000 份 ICU 文件；补充分析直接使用被 Git 忽略的 `output/data/feature_profiles.npz`。患者级特征和预测不提交到仓库，聚合指标、图表和运行元数据可以复现本报告中的结论。
+主脚本会重新读取 12,000 份 ICU 文件；两项补充分析直接使用被 Git 忽略的 `output/data/feature_profiles.npz`。患者级特征和预测不提交到仓库，聚合指标、图表和运行元数据可以复现本报告中的结论。
