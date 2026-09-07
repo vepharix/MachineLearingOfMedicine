@@ -7,7 +7,6 @@
 ## 内容边界
 
 - `EDA/` 和后续的 `Experiments/` 属于个人项目，包括分析代码、实验记录和可复现结果。
-- `GroupProject_lrftzhao/` 是协作者在同一数据上的独立项目快照，保留自己的代码、结果和演讲材料；根目录报告会注明借鉴关系，但不把两条管线的数字混为同一次实验。
 - `CourseMaterials/` 只用于保存课程教案、讲义或任务要求，不存放项目实现。
 - `release/README.md` 是数据字段说明，不是课程教案；原始数据文件不会上传到 GitHub。
 
@@ -32,7 +31,7 @@ release/
 ## 已有分析
 
 - [`RESEARCH_REPORT.md`](RESEARCH_REPORT.md)：从全量 EDA、缺失与异常处理到多时间窗死亡预测训练、指标解释、局限性和后续实验方案的完整研究报告。
-- [`PRESENTATION_PLAN.md`](PRESENTATION_PLAN.md)：结合课程评分、协作者材料和当前实验结果整理的汇报主题、八页页序、时间取舍与答辩问题。
+- [`PRESENTATION_PLAN.md`](PRESENTATION_PLAN.md)：结合课程评分要求和当前实验结果整理的汇报主题、八页页序、时间取舍与答辩问题。
 - [`EDA/REPORT.md`](EDA/REPORT.md)：数据完整性、缺失情况、变量覆盖率、分布和院内死亡组间比较。
 - [`EDA/CORRELATION_REPORT.md`](EDA/CORRELATION_REPORT.md)：SAPS-I、SOFA、死亡时间、住院时间和院内死亡的 Pearson/Spearman 相关性。
 - `EDA/output/Distribution/`：EDA 汇总表和图像。
