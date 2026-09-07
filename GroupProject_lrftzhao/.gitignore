@@ -1,0 +1,11 @@
+# 原始数据与病人级派生文件：本地生成，不进 Git（与仓库根目录 .gitignore 的政策一致）
+release/
+output/models/
+output/splits/
+output/features*.csv
+output/labels.csv
+output/E_fp_to_tp.csv
+output/t1_test_predictions.csv
+output/t2_test_predictions.csv
+output_mac_*/
+__pycache__/

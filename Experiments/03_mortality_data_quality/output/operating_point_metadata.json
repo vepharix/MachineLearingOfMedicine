@@ -1,0 +1,12 @@
+{
+  "source_experiment": "03_mortality_data_quality",
+  "horizon_hours": 48,
+  "model": "hist_gradient_boosting",
+  "preprocess": "raw_median",
+  "random_state": 20260904,
+  "analyses": [
+    "recalibration",
+    "sensitivity_operating_points",
+    "leave_one_icu_out"
+  ]
+}

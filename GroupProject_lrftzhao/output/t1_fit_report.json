@@ -1,0 +1,55 @@
+{
+  "_boosting_backend": "xgboost",
+  "logreg": {
+    "chosen": {
+      "C": 0.01
+    },
+    "val": {
+      "auc_roc": 0.8743272580544331,
+      "auc_pr": 0.5825364040206156,
+      "brier": 0.08532483201374315,
+      "prevalence": 0.1425,
+      "n": 2400
+    },
+    "grid_edge": false
+  },
+  "tree": {
+    "chosen": {
+      "max_depth": 5
+    },
+    "val": {
+      "auc_roc": 0.7981319511931757,
+      "auc_pr": 0.4210166275549263,
+      "brier": 0.10141536755849873,
+      "prevalence": 0.1425,
+      "n": 2400
+    },
+    "grid_edge": false
+  },
+  "rf": {
+    "chosen": {
+      "min_samples_leaf": 5
+    },
+    "val": {
+      "auc_roc": 0.861199199813593,
+      "auc_pr": 0.5785797212426028,
+      "brier": 0.09020066398847583,
+      "prevalence": 0.1425,
+      "n": 2400
+    },
+    "grid_edge": false
+  },
+  "xgb": {
+    "chosen": {
+      "max_depth": 4
+    },
+    "val": {
+      "auc_roc": 0.8843366920703117,
+      "auc_pr": 0.6176408281453343,
+      "brier": 0.08201150596141815,
+      "prevalence": 0.1425,
+      "n": 2400
+    },
+    "grid_edge": false
+  }
+}
