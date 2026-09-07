@@ -2,7 +2,7 @@
 
 ## ICU 前 48 小时数据探索
 
-这个项目分析 ICU 患者入院后前 48 小时的不规则临床时序数据，当前包含数据质量检查、描述性统计、缺失与覆盖率分析，以及 SAPS-I、SOFA 与患者结局的相关性分析。
+这个项目分析 ICU 患者入院后前 48 小时的不规则临床时序数据，包含数据质量检查与 EDA、院内死亡预测及稳健性验证、住院时长与剩余床日回归，以及 24 小时患者表型聚类。
 
 ## 内容边界
 
@@ -39,7 +39,9 @@ release/
 - [`Experiments/01_length_of_stay_by_mortality/`](Experiments/01_length_of_stay_by_mortality/)：第一步实验，按是否院内死亡拆分，比较 SAPS-I、SOFA 与住院时间的关系。
 - [`Experiments/02_mortality_prediction_baseline/`](Experiments/02_mortality_prediction_baseline/)：使用前 6、12、24、48 小时原始记录建立院内死亡预测基线，并与静态信息和 SAPS-I/SOFA 参照模型比较。
 - [`Experiments/04_length_of_stay_regression/`](Experiments/04_length_of_stay_regression/)：使用前 6、12、24、48 小时记录预测完整住院时长，比较岭回归和梯度提升，并保留固定测试集与 bootstrap 置信区间。
-- [`Experiments/05_patient_phenotype_clustering/`](Experiments/05_patient_phenotype_clustering/)：使用前 24 小时临床状态进行 PCA 与 K-means 患者分型，通过留出集轮廓系数和重复子样本 ARI 选择簇数，再进行簇后结局描述。
+- [`Experiments/05_patient_phenotype_clustering/`](Experiments/05_patient_phenotype_clustering/)：使用前 24 小时生理状态进行 PCA 与 K-means 分型，并用留出集轮廓系数和子样本 ARI 检查分离度与稳定性。
+- [`Experiments/06_mortality_robustness/`](Experiments/06_mortality_robustness/)：比较死亡模型的填补与清洗方案，增加缺失模式消融、Bootstrap、校准、临床工作点、亚组、跨 ICU 类型和标签敏感性。
+- [`Experiments/07_remaining_length_of_stay/`](Experiments/07_remaining_length_of_stay/)：预测 48 小时后的剩余住院时间，分别选择个体 MAE 模型和经 smearing 校正的队列总床日模型。
 
 分析结果仅用于数据研究，不构成临床判断或医疗建议。
 
@@ -57,6 +59,8 @@ python Experiments/01_length_of_stay_by_mortality/run_experiment.py
 python Experiments/02_mortality_prediction_baseline/run_experiment.py
 python Experiments/04_length_of_stay_regression/run_experiment.py
 python Experiments/05_patient_phenotype_clustering/run_experiment.py
+python Experiments/06_mortality_robustness/run_experiment.py
+python Experiments/07_remaining_length_of_stay/run_experiment.py
 ```
 
 脚本只读取 `release/` 中的原始数据，不会修改它们。

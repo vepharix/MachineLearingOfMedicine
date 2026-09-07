@@ -1,0 +1,24 @@
+{
+  "landmark_hours": 48,
+  "target": "Length_of_stay - 2 days",
+  "eligible_records": 11828,
+  "excluded_missing_los": 167,
+  "excluded_los_below_2": 5,
+  "split_sizes": {
+    "train": 8279,
+    "validation": 1774,
+    "test": 1775
+  },
+  "selected_individual_model": "hist_gradient_boosting",
+  "selected_individual_parameter": 1.0,
+  "selected_cohort_model": "ridge",
+  "selected_cohort_parameter": 1.0,
+  "individual_selection_rule": "minimum validation direct-inverse MAE, then RMSE",
+  "cohort_selection_rule": "minimum absolute validation smeared sum bias, then MAE",
+  "cohort_smearing_factor": 1.2744658314273873,
+  "random_state": 20260904,
+  "bootstrap_repeats": 1000,
+  "cache_hit": true,
+  "feature_count": 341,
+  "scikit_learn_version": "1.9.0"
+}
