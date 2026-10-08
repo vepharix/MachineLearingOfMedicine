@@ -1,0 +1,10 @@
+{
+  "n": 8279,
+  "r2_log_scale": 0.11937964359171493,
+  "adjusted_r2_log_scale": 0.11746061618065573,
+  "aic": 19160.671236025697,
+  "bic": 19294.079307901335,
+  "durbin_watson": 1.9979260650696506,
+  "condition_number": 3.45390622344255,
+  "target": "log1p(remaining_los_days)"
+}

@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 import sklearn
 from PIL import Image, ImageDraw, ImageFont
-from sklearn.cluster import KMeans
+from sklearn.cluster import AgglomerativeClustering, KMeans
 from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import (
@@ -208,6 +208,7 @@ def evaluate_k_values(
         rows.append(
             {
                 "k": k,
+                "train_inertia": float(model.inertia_),
                 "train_silhouette": float(
                     silhouette_score(train, train_labels, sample_size=min(5000, len(train)), random_state=random_state)
                 ),
@@ -220,6 +221,96 @@ def evaluate_k_values(
             }
         )
     return pd.DataFrame(rows), models
+
+
+def hierarchical_sensitivity(
+    train: np.ndarray,
+    reference_labels: np.ndarray,
+    *,
+    selected_k: int,
+    random_state: int,
+    maximum_records: int = 2500,
+) -> pd.DataFrame:
+    """Compare K-means with hierarchical clustering on a fixed training subsample."""
+
+    rng = np.random.default_rng(random_state)
+    chosen = np.sort(
+        rng.choice(len(train), size=min(maximum_records, len(train)), replace=False)
+    )
+    rows = []
+    for linkage in ("ward", "complete", "average"):
+        labels = AgglomerativeClustering(n_clusters=selected_k, linkage=linkage).fit_predict(
+            train[chosen]
+        )
+        rows.append(
+            {
+                "algorithm": "agglomerative",
+                "linkage": linkage,
+                "n": int(len(chosen)),
+                "adjusted_rand_vs_kmeans": float(
+                    adjusted_rand_score(reference_labels[chosen], labels)
+                ),
+                "silhouette": float(
+                    silhouette_score(
+                        train[chosen],
+                        labels,
+                        sample_size=min(2500, len(chosen)),
+                        random_state=random_state,
+                    )
+                ),
+                "minimum_cluster_fraction": float(np.bincount(labels).min() / len(labels)),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def draw_scree_elbow(
+    pca_variance: np.ndarray,
+    selection_metrics: pd.DataFrame,
+    selected_k: int,
+    destination: Path,
+) -> None:
+    image = Image.new("RGB", (1650, 760), BG)
+    draw = ImageDraw.Draw(image)
+    draw.text((55, 35), "PCA 碎石图与 K-means 肘部图", font=font(36, True), fill=INK)
+    draw.text((55, 88), "左图说明信息保留过程；右图的惯性只作选择辅助，不单独决定簇数。", font=font(20), fill=MUTED)
+    panels = [(55, 145, 800, 700), (850, 145, 1595, 700)]
+    for panel in panels:
+        draw.rounded_rectangle(panel, radius=18, fill=WHITE)
+
+    left, top, right, bottom = 130, 220, 750, 625
+    components = np.arange(1, len(pca_variance) + 1)
+    cumulative = np.cumsum(pca_variance)
+    points = [
+        (
+            left + (component - 1) / max(len(components) - 1, 1) * (right - left),
+            bottom - value * (bottom - top),
+        )
+        for component, value in zip(components, cumulative)
+    ]
+    draw.line(points, fill=BLUE, width=4)
+    for point in points:
+        draw.ellipse((point[0] - 4, point[1] - 4, point[0] + 4, point[1] + 4), fill=BLUE)
+    draw.text((95, 170), "累计解释方差", font=font(22, True), fill=INK)
+    draw.text((335, 650), "主成分数量", font=font(18), fill=MUTED)
+
+    left, top, right, bottom = 930, 220, 1540, 625
+    ks = selection_metrics["k"].to_numpy(float)
+    inertia = selection_metrics["train_inertia"].to_numpy(float)
+    low, high = float(inertia.min()), float(inertia.max())
+    points = []
+    for k, value in zip(ks, inertia):
+        px = left + (k - ks.min()) / max(np.ptp(ks), 1) * (right - left)
+        py = bottom - (value - low) / max(high - low, 1e-9) * (bottom - top)
+        points.append((px, py))
+        color = ORANGE if int(k) == selected_k else GREEN
+        draw.ellipse((px - 6, py - 6, px + 6, py + 6), fill=color)
+        center(draw, (px, bottom + 28), str(int(k)), font(16), MUTED)
+    draw.line(points, fill=GREEN, width=4)
+    draw.text((895, 170), "训练集簇内平方和（inertia）", font=font(22, True), fill=INK)
+    draw.text((1215, 650), "聚类数 k", font=font(18), fill=MUTED)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    image.save(destination)
 
 
 def choose_k(metrics: pd.DataFrame) -> int:
@@ -423,6 +514,10 @@ def write_report(
 
 ![聚类数选择](output/report_figures/k_selection.png)
 
+PCA 碎石图与 K-means 肘部图作为补充诊断，用来检查 80% 累计解释方差截点和簇内平方和随 k 的下降形状。另在训练集固定抽取 {metadata['hierarchical_sensitivity_sample_size']:,} 例，分别运行 Ward、complete 和 average 层次聚类；其中与 K-means 最接近的是 {metadata['hierarchical_best_linkage']} linkage，ARI 为 {metadata['hierarchical_best_ari_vs_kmeans']:.3f}。这个比较用于判断患者画像是否依赖单一算法，不会反过来用测试结局挑选聚类。
+
+![PCA 碎石图与 K-means 肘部图](output/report_figures/pca_scree_kmeans_elbow.png)
+
 ## 簇后描述
 
 下面的死亡率和住院时长只用于解释选定后的簇，不参与建簇或模型选择，因此不能把簇间差异解释为因果效应。簇编号按平均 PC1 从低到高重新排列，只为保持输出可读。
@@ -508,6 +603,12 @@ def main() -> None:
     )
     selected_k = choose_k(selection_metrics)
     selected_model = models[selected_k]
+    hierarchical = hierarchical_sensitivity(
+        train_pc,
+        selected_model.labels_,
+        selected_k=selected_k,
+        random_state=args.random_state,
+    )
     labels_original = np.empty(len(raw), dtype=int)
     labels_original[train_indices] = selected_model.labels_
     labels_original[holdout_indices] = selected_model.predict(holdout_pc)
@@ -587,6 +688,7 @@ def main() -> None:
     data_output.mkdir(parents=True, exist_ok=True)
     figure_output.mkdir(parents=True, exist_ok=True)
     selection_metrics.to_csv(args.output_dir / "model_selection_metrics.csv", index=False)
+    hierarchical.to_csv(args.output_dir / "hierarchical_sensitivity.csv", index=False)
     characteristics.to_csv(args.output_dir / "cluster_characteristics.csv", index=False)
     profile_long.to_csv(args.output_dir / "cluster_feature_profiles.csv", index=False)
     profile_wide.to_csv(args.output_dir / "cluster_standardized_profiles.csv")
@@ -623,6 +725,12 @@ def main() -> None:
     ).to_csv(data_output / "cluster_assignments.csv", index=False)
 
     draw_selection(selection_metrics, selected_k, figure_output / "k_selection.png")
+    draw_scree_elbow(
+        pca.explained_variance_ratio_,
+        selection_metrics,
+        selected_k,
+        figure_output / "pca_scree_kmeans_elbow.png",
+    )
     draw_pca_scatter(all_pc, labels, pca.explained_variance_ratio_, figure_output / "pca_scatter.png")
     draw_profile_heatmap(profile_wide, figure_output / "cluster_profile_heatmap.png")
 
@@ -655,6 +763,13 @@ def main() -> None:
         "selected_k": selected_k,
         "selection_rule": "ARI median >= 0.75 and minimum cluster fraction >= 0.05, then maximum holdout silhouette",
         "stability_repeats": args.stability_repeats,
+        "hierarchical_sensitivity_sample_size": int(hierarchical["n"].iloc[0]),
+        "hierarchical_best_linkage": str(
+            hierarchical.sort_values("adjusted_rand_vs_kmeans", ascending=False).iloc[0]["linkage"]
+        ),
+        "hierarchical_best_ari_vs_kmeans": float(
+            hierarchical["adjusted_rand_vs_kmeans"].max()
+        ),
         "cluster_icu_type_nmi": cluster_icu_nmi,
         "label_mapping_original_to_reported": label_mapping,
         "random_state": args.random_state,

@@ -38,10 +38,10 @@ release/
 - `EDA/output/correlation/`：相关性矩阵、六组散点图和数值结果。
 - [`Experiments/01_length_of_stay_by_mortality/`](Experiments/01_length_of_stay_by_mortality/)：第一步实验，按是否院内死亡拆分，比较 SAPS-I、SOFA 与住院时间的关系。
 - [`Experiments/02_mortality_prediction_baseline/`](Experiments/02_mortality_prediction_baseline/)：使用前 6、12、24、48 小时原始记录建立院内死亡预测基线，并与静态信息和 SAPS-I/SOFA 参照模型比较。
-- [`Experiments/03_mortality_data_quality/`](Experiments/03_mortality_data_quality/)：在固定死亡标签和住院记录划分下，系统比较缺失填补、异常值清洗、标签敏感性、校准和亚组稳定性，并补充目标灵敏度工作点、再校准与留一 ICU 压力测试。
+- [`Experiments/03_mortality_data_quality/`](Experiments/03_mortality_data_quality/)：在固定死亡标签和住院记录划分下，系统比较缺失填补、异常值清洗、标签敏感性、校准和亚组稳定性，并补充训练集内调参、学习曲线、置换重要度、PDP、目标灵敏度工作点、再校准与留一 ICU 压力测试。
 - [`Experiments/04_length_of_stay_regression/`](Experiments/04_length_of_stay_regression/)：使用前 6、12、24、48 小时记录预测完整住院时长，比较岭回归和梯度提升，并保留固定测试集与 bootstrap 置信区间。
-- [`Experiments/05_patient_phenotype_clustering/`](Experiments/05_patient_phenotype_clustering/)：使用前 24 小时生理状态进行 PCA 与 K-means 分型，并用留出集轮廓系数和子样本 ARI 检查分离度与稳定性。
-- [`Experiments/06_remaining_length_of_stay/`](Experiments/06_remaining_length_of_stay/)：预测 48 小时后的剩余住院时间，分别选择个体 MAE 模型和经 smearing 校正的队列总床日模型。
+- [`Experiments/05_patient_phenotype_clustering/`](Experiments/05_patient_phenotype_clustering/)：使用前 24 小时生理状态进行 PCA 与 K-means 分型，并用留出集轮廓系数、子样本 ARI、碎石/肘部图和层次聚类敏感性检查分离度与稳定性。
+- [`Experiments/06_remaining_length_of_stay/`](Experiments/06_remaining_length_of_stay/)：预测 48 小时后的剩余住院时间，分别选择个体 MAE 模型和经 smearing 校正的队列总床日模型，并补充 OLS 诊断、训练集内调参、学习曲线和置换重要度。
 
 分析结果仅用于数据研究，不构成临床判断或医疗建议。
 
@@ -61,9 +61,11 @@ python Experiments/03_mortality_data_quality/run_experiment.py
 python Experiments/03_mortality_data_quality/analyze_selected_models.py
 python Experiments/03_mortality_data_quality/analyze_operating_points.py
 python Experiments/03_mortality_data_quality/plot_results.py
+python Experiments/03_mortality_data_quality/run_course_extension.py
 python Experiments/04_length_of_stay_regression/run_experiment.py
 python Experiments/05_patient_phenotype_clustering/run_experiment.py
 python Experiments/06_remaining_length_of_stay/run_experiment.py
+python Experiments/06_remaining_length_of_stay/run_course_extension.py
 ```
 
 脚本只读取 `release/` 中的原始数据，不会修改它们。

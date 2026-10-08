@@ -1,0 +1,83 @@
+{
+  "target": "remaining length of stay after the 48-hour landmark",
+  "split_sizes": {
+    "train": 8279,
+    "validation": 1774,
+    "test": 1775
+  },
+  "selection": "5-fold training CV MAE tunes each family; validation MAE selects family; test opened once",
+  "selected_model": "hist_gradient_boosting",
+  "selected_parameters": {
+    "memory": null,
+    "steps": [
+      [
+        "quantileclipper",
+        "QuantileClipper()"
+      ],
+      [
+        "simpleimputer",
+        "SimpleImputer(add_indicator=True, keep_empty_features=True, strategy='median')"
+      ],
+      [
+        "histgradientboostingregressor",
+        "HistGradientBoostingRegressor(early_stopping=True, l2_regularization=1.0,\n                              learning_rate=0.03, max_iter=300,\n                              min_samples_leaf=30, random_state=20260906)"
+      ]
+    ],
+    "transform_input": null,
+    "verbose": false,
+    "quantileclipper": "QuantileClipper()",
+    "simpleimputer": "SimpleImputer(add_indicator=True, keep_empty_features=True, strategy='median')",
+    "histgradientboostingregressor": "HistGradientBoostingRegressor(early_stopping=True, l2_regularization=1.0,\n                              learning_rate=0.03, max_iter=300,\n                              min_samples_leaf=30, random_state=20260906)",
+    "quantileclipper__lower": 0.005,
+    "quantileclipper__upper": 0.995,
+    "simpleimputer__add_indicator": true,
+    "simpleimputer__copy": true,
+    "simpleimputer__fill_value": null,
+    "simpleimputer__keep_empty_features": true,
+    "simpleimputer__missing_values": NaN,
+    "simpleimputer__strategy": "median",
+    "histgradientboostingregressor__categorical_features": "from_dtype",
+    "histgradientboostingregressor__early_stopping": true,
+    "histgradientboostingregressor__interaction_cst": null,
+    "histgradientboostingregressor__l2_regularization": 1.0,
+    "histgradientboostingregressor__learning_rate": 0.03,
+    "histgradientboostingregressor__loss": "squared_error",
+    "histgradientboostingregressor__max_bins": 255,
+    "histgradientboostingregressor__max_depth": null,
+    "histgradientboostingregressor__max_features": 1.0,
+    "histgradientboostingregressor__max_iter": 300,
+    "histgradientboostingregressor__max_leaf_nodes": 31,
+    "histgradientboostingregressor__min_samples_leaf": 30,
+    "histgradientboostingregressor__monotonic_cst": null,
+    "histgradientboostingregressor__n_iter_no_change": 10,
+    "histgradientboostingregressor__quantile": null,
+    "histgradientboostingregressor__random_state": 20260906,
+    "histgradientboostingregressor__scoring": "loss",
+    "histgradientboostingregressor__tol": 1e-07,
+    "histgradientboostingregressor__validation_fraction": 0.1,
+    "histgradientboostingregressor__verbose": 0,
+    "histgradientboostingregressor__warm_start": false
+  },
+  "ols_features": [
+    "Age",
+    "Gender",
+    "InitialWeight",
+    "ICUType_2",
+    "ICUType_3",
+    "ICUType_4",
+    "Albumin__last",
+    "BUN__last",
+    "Creatinine__last",
+    "GCS__min",
+    "HR__mean",
+    "Lactate__max",
+    "MAP__min",
+    "Na__last",
+    "Platelets__last",
+    "Temp__mean",
+    "Urine__mean",
+    "WBC__last"
+  ],
+  "cache_hit": true,
+  "random_state": 20260906
+}

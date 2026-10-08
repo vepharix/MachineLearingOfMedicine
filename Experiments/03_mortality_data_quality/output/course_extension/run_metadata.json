@@ -1,0 +1,57 @@
+{
+  "horizon_hours": 48,
+  "split_sizes": {
+    "train": 8400,
+    "validation": 1800,
+    "test": 1800
+  },
+  "selection": "5-fold training CV AUPRC tunes each family; validation AUPRC selects family; test opened once",
+  "selected_model": "hist_gradient_boosting",
+  "selected_parameters": {
+    "memory": null,
+    "steps": [
+      [
+        "imputer",
+        "SimpleImputer(keep_empty_features=True, strategy='median')"
+      ],
+      [
+        "model",
+        "HistGradientBoostingClassifier(early_stopping=True, learning_rate=0.03,\n                               max_iter=250, max_leaf_nodes=15,\n                               min_samples_leaf=30, random_state=20260906)"
+      ]
+    ],
+    "transform_input": null,
+    "verbose": false,
+    "imputer": "SimpleImputer(keep_empty_features=True, strategy='median')",
+    "model": "HistGradientBoostingClassifier(early_stopping=True, learning_rate=0.03,\n                               max_iter=250, max_leaf_nodes=15,\n                               min_samples_leaf=30, random_state=20260906)",
+    "imputer__add_indicator": false,
+    "imputer__copy": true,
+    "imputer__fill_value": null,
+    "imputer__keep_empty_features": true,
+    "imputer__missing_values": NaN,
+    "imputer__strategy": "median",
+    "model__categorical_features": "from_dtype",
+    "model__class_weight": null,
+    "model__early_stopping": true,
+    "model__interaction_cst": null,
+    "model__l2_regularization": 0.0,
+    "model__learning_rate": 0.03,
+    "model__loss": "log_loss",
+    "model__max_bins": 255,
+    "model__max_depth": null,
+    "model__max_features": 1.0,
+    "model__max_iter": 250,
+    "model__max_leaf_nodes": 15,
+    "model__min_samples_leaf": 30,
+    "model__monotonic_cst": null,
+    "model__n_iter_no_change": 10,
+    "model__random_state": 20260906,
+    "model__scoring": "loss",
+    "model__tol": 1e-07,
+    "model__validation_fraction": 0.1,
+    "model__verbose": 0,
+    "model__warm_start": false
+  },
+  "class_imbalance": "class_weight None versus balanced is tuned for logistic regression",
+  "cache_hit": true,
+  "random_state": 20260906
+}

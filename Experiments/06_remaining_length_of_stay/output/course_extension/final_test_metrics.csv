@@ -1,0 +1,2 @@
+model,fit_sample,n,mae_days,rmse_days,r2,sum_bias_percent
+hist_gradient_boosting,train_plus_validation,1775,6.674136637097799,13.319487368505294,0.07617508792958416,-27.02887579977153

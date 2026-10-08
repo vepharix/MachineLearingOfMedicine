@@ -26,6 +26,10 @@
 
 ![聚类数选择](output/report_figures/k_selection.png)
 
+PCA 碎石图与 K-means 肘部图作为补充诊断，用来检查 80% 累计解释方差截点和簇内平方和随 k 的下降形状。另在训练集固定抽取 2,500 例，分别运行 Ward、complete 和 average 层次聚类；其中与 K-means 最接近的是 ward linkage，ARI 为 0.559。这个比较用于判断患者画像是否依赖单一算法，不会反过来用测试结局挑选聚类。
+
+![PCA 碎石图与 K-means 肘部图](output/report_figures/pca_scree_kmeans_elbow.png)
+
 ## 簇后描述
 
 下面的死亡率和住院时长只用于解释选定后的簇，不参与建簇或模型选择，因此不能把簇间差异解释为因果效应。簇编号按平均 PC1 从低到高重新排列，只为保持输出可读。

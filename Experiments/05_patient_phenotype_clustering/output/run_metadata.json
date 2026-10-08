@@ -63,6 +63,9 @@
   "selected_k": 4,
   "selection_rule": "ARI median >= 0.75 and minimum cluster fraction >= 0.05, then maximum holdout silhouette",
   "stability_repeats": 20,
+  "hierarchical_sensitivity_sample_size": 2500,
+  "hierarchical_best_linkage": "ward",
+  "hierarchical_best_ari_vs_kmeans": 0.5590473183850923,
   "cluster_icu_type_nmi": 0.11105198009885242,
   "label_mapping_original_to_reported": {
     "2": 1,

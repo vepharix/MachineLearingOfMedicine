@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Experiment 07: remaining hospital length of stay after the 48-hour landmark."""
+"""Experiment 06: remaining hospital length of stay after the 48-hour landmark."""
 
 from __future__ import annotations
 
@@ -268,8 +268,8 @@ def write_report(
     subgroup_metrics: pd.DataFrame,
     bootstrap: pd.DataFrame,
 ) -> None:
-    candidate_test = candidate_metrics[
-        (candidate_metrics["split"] == "test") & (candidate_metrics["readout"] == "direct")
+    candidate_validation = candidate_metrics[
+        (candidate_metrics["split"] == "validation") & (candidate_metrics["readout"] == "direct")
     ].sort_values("mae_days")
     report = f"""# 实验 06：48 小时后的剩余住院时间
 
@@ -281,7 +281,7 @@ def write_report(
 
 ## 候选模型
 
-{markdown_table(candidate_test, [("model", "模型"), ("parameter", "参数"), ("mae_days", "MAE"), ("rmse_days", "RMSE"), ("r2", "R²"), ("sum_bias_percent", "总床日偏差%")])}
+{markdown_table(candidate_validation, [("model", "模型"), ("parameter", "参数"), ("mae_days", "验证 MAE"), ("rmse_days", "验证 RMSE"), ("r2", "验证 R²"), ("sum_bias_percent", "验证总床日偏差%")])}
 
 个体预测按验证集直接反变换 MAE 选中 `{selected_individual_model}`，参数为 {selected_individual_parameter:g}；队列床日按验证集 smearing 后总量绝对偏差另选中 `{selected_cohort_model}`，参数为 {selected_cohort_parameter:g}。模型间差异需要结合 Bootstrap 区间理解，不能只按小数点后的最低 MAE 宣称一种算法稳定优于另一种算法。
 
@@ -351,7 +351,9 @@ def main() -> None:
             factor = smearing_factor(model, x[splits["train"]], remaining[splits["train"]])
             fitted[(model_name, parameter)] = model
             smearing[(model_name, parameter)] = factor
-            for split in ("validation", "test"):
+            # Candidate settings are compared on validation only.  Test is
+            # opened once after the individual and cohort readouts are fixed.
+            for split in ("validation",):
                 for readout, multiplier in (("direct", 1.0), ("smeared", factor)):
                     prediction = predict_remaining(model, x[splits[split]], multiplier)
                     row = {
@@ -363,7 +365,7 @@ def main() -> None:
                     }
                     row.update(regression_metrics(remaining[splits[split]], prediction))
                     rows.append(row)
-    for split in ("validation", "test"):
+    for split in ("validation",):
         baseline = float(np.median(remaining[splits["train"]]))
         prediction = np.full(len(splits[split]), baseline)
         row = {

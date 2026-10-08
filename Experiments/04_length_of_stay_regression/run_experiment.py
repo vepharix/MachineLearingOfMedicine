@@ -281,8 +281,10 @@ def draw_observed_vs_predicted(
     image.save(destination)
 
 
-def markdown_test_table(metrics: pd.DataFrame) -> str:
-    test = metrics[(metrics["split"] == "test") & metrics["horizon_hours"].notna()].copy()
+def markdown_validation_table(metrics: pd.DataFrame) -> str:
+    validation = metrics[
+        (metrics["split"] == "validation") & metrics["horizon_hours"].notna()
+    ].copy()
     lines = [
         "| 时间窗 | 模型 | MAE（天） | RMSE（天） | 中位绝对误差（天） | R² | Spearman |",
         "|---:|---|---:|---:|---:|---:|---:|",
@@ -291,7 +293,7 @@ def markdown_test_table(metrics: pd.DataFrame) -> str:
         "ridge_log_target": "岭回归",
         "hist_gradient_boosting_log_target": "直方图梯度提升",
     }
-    for row in test.sort_values(["horizon_hours", "model"]).itertuples(index=False):
+    for row in validation.sort_values(["horizon_hours", "model"]).itertuples(index=False):
         lines.append(
             f"| {int(row.horizon_hours)} 小时 | {labels[row.model]} | {row.mae_days:.2f} | "
             f"{row.rmse_days:.2f} | {row.median_ae_days:.2f} | {row.r2:.3f} | {row.spearman:.3f} |"
@@ -327,11 +329,11 @@ def write_report(
 
 数学上，岭回归在对数结局上寻找加权和 $z=\beta_0+x^T\beta$，同时最小化预测残差与 $\alpha\|\beta\|_2^2$，后一个惩罚项会压缩不稳定的大系数；天数预测为 $\exp(z)-1$。梯度提升则从一个初始预测开始，按 $F_m(x)=F_{{m-1}}(x)+\eta h_m(x)$ 逐棵加入小树来修正残差，因此能表示“某项指标超过阈值后风险变化”以及变量之间的组合。两者使用相同输入和同一划分，差异主要来自函数形式。
 
-## 全部候选模型的测试集结果
+## 候选模型的验证集结果
 
-{markdown_test_table(metrics)}
+{markdown_validation_table(metrics)}
 
-训练集中位数基线的测试集 MAE 为 {float(metrics[(metrics['model'] == 'training_median') & (metrics['split'] == 'test')]['mae_days'].iloc[0]):.2f} 天。验证集选择出的方案为前 {int(primary['horizon_hours'])} 小时 {model_label}。合并训练集和验证集后，其测试集 MAE 为 {primary['mae_days']:.2f} 天（bootstrap 95% CI {ci.loc['mae_days', 'ci_2.5%']:.2f}–{ci.loc['mae_days', 'ci_97.5%']:.2f}），RMSE 为 {primary['rmse_days']:.2f} 天（95% CI {ci.loc['rmse_days', 'ci_2.5%']:.2f}–{ci.loc['rmse_days', 'ci_97.5%']:.2f}），R² 为 {primary['r2']:.3f}。MAE 便于解释为平均偏差多少天；RMSE 对少数长住院的大误差更加敏感，因此通常高于 MAE。
+训练集中位数基线在验证集的 MAE 为 {float(metrics[(metrics['model'] == 'training_median') & (metrics['split'] == 'validation')]['mae_days'].iloc[0]):.2f} 天。验证集选择出的方案为前 {int(primary['horizon_hours'])} 小时 {model_label}。合并训练集和验证集后，固定测试集只打开一次，其 MAE 为 {primary['mae_days']:.2f} 天（bootstrap 95% CI {ci.loc['mae_days', 'ci_2.5%']:.2f}–{ci.loc['mae_days', 'ci_97.5%']:.2f}），RMSE 为 {primary['rmse_days']:.2f} 天（95% CI {ci.loc['rmse_days', 'ci_2.5%']:.2f}–{ci.loc['rmse_days', 'ci_97.5%']:.2f}），R² 为 {primary['r2']:.3f}。MAE 便于解释为平均偏差多少天；RMSE 对少数长住院的大误差更加敏感，因此通常高于 MAE。
 
 按最终结局作簇后误差检查时，存活出院者的 MAE 为 {float(subgroup_metrics.loc[subgroup_metrics['level'] == 'survived_to_discharge', 'mae_days'].iloc[0]):.2f} 天，院内死亡者为 {float(subgroup_metrics.loc[subgroup_metrics['level'] == 'in_hospital_death', 'mae_days'].iloc[0]):.2f} 天。死亡结局从未进入模型；这项差异提示“死亡提前结束住院”的竞争事件需要在下一阶段单独处理。
 
@@ -404,7 +406,7 @@ def main() -> None:
 
     metric_rows: list[dict[str, object]] = []
     train_median = float(np.median(y[split_indices["train"]]))
-    for split in ("validation", "test"):
+    for split in ("validation",):
         prediction = np.full(len(split_indices[split]), train_median)
         row: dict[str, object] = {
             "model": "training_median",
@@ -423,7 +425,9 @@ def main() -> None:
             model = build_model(name, args.random_state)
             model.fit(x[split_indices["train"]], np.log1p(y[split_indices["train"]]))
             fitted[(horizon, name)] = model
-            for split in ("validation", "test"):
+            # Candidate models are compared on validation only.  The test set is
+            # evaluated once, after the horizon and model family have been fixed.
+            for split in ("validation",):
                 prediction = predict_days(
                     model,
                     x[split_indices[split]],

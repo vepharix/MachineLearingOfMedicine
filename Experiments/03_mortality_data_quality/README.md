@@ -104,3 +104,15 @@ python Experiments/03_mortality_data_quality/test_analyze_operating_points.py
 ```
 
 主脚本会重新读取 12,000 份 ICU 文件；两项补充分析直接使用被 Git 忽略的 `output/data/feature_profiles.npz`。患者级特征和预测不提交到仓库，聚合指标、图表和运行元数据可以复现本报告中的结论。
+
+## 课程对齐补充：模型调优、学习曲线与解释
+
+补充实验沿用 48 小时输入和固定 8,400/1,800/1,800 划分。实验叙述按一般流程组织：先以逻辑回归作为简单基线，再与梯度提升比较；每个模型只在训练集五折中选择超参数，随后由验证集 AUPRC 确定模型家族，固定测试集只评价最终方案一次。逻辑回归比较 `C=0.01—10` 及是否使用 `class_weight='balanced'`，梯度提升比较学习率、叶节点数和 L2 正则。验证集选择梯度提升，但它在测试集的 AUROC/AUPRC/Brier 为 0.857/0.520/0.090，低于未扩展搜索的原主模型 0.882/0.592/0.084，因此调优结果作为“更广搜索未带来稳定收益”的补充证据，不覆盖主结论。
+
+学习曲线显示，训练样本由 1,344 增至 6,720 时，五折 AUPRC 从 0.486 上升到 0.573，但训练分数仍明显更高，提示模型同时受到样本量和过拟合影响。验证集置换重要度最高的变量包括末次 GCS、年龄、末次乳酸和 GCS 变化趋势；这里的数值只表示打乱该列对预测排序造成的影响，不能解释为治疗或生理变量对死亡的因果效应。部分依赖图同样只用于观察模型在验证集范围内学到的平均形状。
+
+![死亡模型学习曲线](output/course_extension/report_figures/learning_curve.png)
+
+![验证集置换重要度](output/course_extension/report_figures/permutation_importance.png)
+
+![部分依赖图](output/course_extension/report_figures/partial_dependence.png)
