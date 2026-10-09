@@ -701,7 +701,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir", type=Path, default=ROOT / "release")
     parser.add_argument("--output-dir", type=Path, default=EXPERIMENT_DIR / "output")
-    parser.add_argument("--random-state", type=int, default=20260904)
+    parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument("--folds", type=int, default=5)
     parser.add_argument("--bootstrap-iterations", type=int, default=1000)
     parser.add_argument("--max-records", type=int, default=None)

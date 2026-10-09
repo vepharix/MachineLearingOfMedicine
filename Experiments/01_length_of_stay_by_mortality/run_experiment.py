@@ -11,7 +11,14 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT / "release" / "outcomes.csv"
+SOURCE = next(
+    (
+        path
+        for path in (ROOT.parent / "release" / "outcomes.csv", ROOT / "release" / "outcomes.csv")
+        if path.exists()
+    ),
+    ROOT / "release" / "outcomes.csv",
+)
 EXPERIMENT_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = EXPERIMENT_DIR / "output"
 DATA_DIR = OUTPUT_DIR / "data"
@@ -41,7 +48,7 @@ def draw_score_los_scatter(
     plot_data = plot_data[plot_data[score] >= 0]
     scores = plot_data[score].to_numpy(dtype=float)
     lengths = plot_data["Length_of_stay"].to_numpy(dtype=float)
-    rng = np.random.default_rng(20260903)
+    rng = np.random.default_rng(42)
     display_scores = scores + rng.normal(0, 0.08, len(scores))
     width, height = 1200, 720
     left, right, top, bottom = 110, 55, 115, 95

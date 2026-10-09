@@ -15,7 +15,7 @@
     "validation": 1800,
     "test": 1800
   },
-  "random_state": 20260904,
+  "random_state": 42,
   "scikit_learn_version": "1.9.0",
   "quality_counters": {
     "blank_parameter_rows_skipped": 2403,

@@ -1,10 +1,14 @@
 {
   "n": 8279,
-  "r2_log_scale": 0.11937964359171493,
-  "adjusted_r2_log_scale": 0.11746061618065573,
-  "aic": 19160.671236025697,
-  "bic": 19294.079307901335,
-  "durbin_watson": 1.9979260650696506,
-  "condition_number": 3.45390622344255,
+  "r2_log_scale": 0.12225406466244204,
+  "adjusted_r2_log_scale": 0.12034130112296548,
+  "aic": 19082.397670460436,
+  "bic": 19215.805742336073,
+  "durbin_watson": 2.0322953289540124,
+  "condition_number": 3.4186724587349864,
+  "breusch_pagan_lm": 295.3232857182247,
+  "breusch_pagan_lm_p_value": 4.405543152436972e-52,
+  "breusch_pagan_f": 16.9747071801922,
+  "breusch_pagan_f_p_value": 4.14103581538079e-53,
   "target": "log1p(remaining_los_days)"
 }

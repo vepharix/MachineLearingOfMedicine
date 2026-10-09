@@ -13,12 +13,12 @@ import numpy as np
 import pandas as pd
 import sklearn
 from PIL import Image, ImageDraw, ImageFont
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.base import BaseEstimator, TransformerMixin, clone
 from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import Lasso, Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, median_absolute_error, r2_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold, cross_val_predict, train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -67,23 +67,56 @@ def center(draw: ImageDraw.ImageDraw, xy: tuple[float, float], label: str, used_
 
 
 class QuantileClipper(BaseEstimator, TransformerMixin):
-    def __init__(self, lower: float = 0.005, upper: float = 0.995):
+    def __init__(
+        self,
+        column_mask: np.ndarray | None = None,
+        lower: float = 0.005,
+        upper: float = 0.995,
+    ):
+        self.column_mask = column_mask
         self.lower = lower
         self.upper = upper
 
     def fit(self, x, y=None):
         values = np.asarray(x, dtype=float)
+        self.column_mask_ = (
+            np.ones(values.shape[1], dtype=bool)
+            if self.column_mask is None
+            else np.asarray(self.column_mask, dtype=bool)
+        )
         lows, highs = [], []
-        for column in values.T:
+        for column in values[:, self.column_mask_].T:
             observed = column[np.isfinite(column)]
-            lows.append(float(np.quantile(observed, self.lower)) if len(observed) else math.nan)
-            highs.append(float(np.quantile(observed, self.upper)) if len(observed) else math.nan)
+            lows.append(float(np.quantile(observed, self.lower)) if len(observed) else -np.inf)
+            highs.append(float(np.quantile(observed, self.upper)) if len(observed) else np.inf)
         self.lower_bounds_ = np.asarray(lows)
         self.upper_bounds_ = np.asarray(highs)
         return self
 
     def transform(self, x):
-        return np.clip(np.asarray(x, dtype=float), self.lower_bounds_, self.upper_bounds_)
+        values = np.asarray(x, dtype=float).copy()
+        values[:, self.column_mask_] = np.clip(
+            values[:, self.column_mask_], self.lower_bounds_, self.upper_bounds_
+        )
+        return values
+
+
+def winsor_column_mask(columns: list[str]) -> np.ndarray:
+    """Clip physiological values, not identifiers, categories or care-process features."""
+
+    excluded = {"Age", "Gender"}
+    return np.asarray(
+        [
+            not (
+                column in excluded
+                or column.startswith("ICUType_")
+                or column.endswith("__count")
+                or column.endswith("__hours_since_last")
+            )
+            for column in columns
+        ],
+        dtype=bool,
+    )
 
 
 def make_quantile_splits(y: np.ndarray, random_state: int) -> dict[str, np.ndarray]:
@@ -98,9 +131,16 @@ def make_quantile_splits(y: np.ndarray, random_state: int) -> dict[str, np.ndarr
     return {"train": np.sort(train), "validation": np.sort(validation), "test": np.sort(test)}
 
 
-def build_model(model_name: str, parameter: float, random_state: int):
+def build_model(
+    model_name: str,
+    parameter: float,
+    random_state: int,
+    feature_names: list[str] | None = None,
+):
     common = [
-        QuantileClipper(),
+        QuantileClipper(
+            winsor_column_mask(feature_names) if feature_names is not None else None
+        ),
         SimpleImputer(strategy="median", add_indicator=True, keep_empty_features=True),
     ]
     if model_name == "ridge":
@@ -141,6 +181,28 @@ def build_model(model_name: str, parameter: float, random_state: int):
 def smearing_factor(model, x_train: np.ndarray, y_train: np.ndarray) -> float:
     residual = np.log1p(y_train) - model.predict(x_train)
     return float(np.mean(np.exp(residual)))
+
+
+def out_of_fold_smearing_factor(
+    model,
+    x: np.ndarray,
+    y: np.ndarray,
+    *,
+    random_state: int,
+    folds: int = 5,
+) -> float:
+    """Estimate Duan's factor from predictions made outside each fitting fold."""
+
+    log_target = np.log1p(y)
+    prediction = cross_val_predict(
+        clone(model),
+        x,
+        log_target,
+        cv=KFold(n_splits=folds, shuffle=True, random_state=random_state),
+        n_jobs=1,
+        method="predict",
+    )
+    return float(np.mean(np.exp(log_target - prediction)))
 
 
 def predict_remaining(model, x: np.ndarray, smearing: float = 1.0) -> np.ndarray:
@@ -242,7 +304,7 @@ def draw_readout_comparison(final_metrics: pd.DataFrame, destination: Path) -> N
     image = Image.new("RGB", (1500, 900), BG)
     draw = ImageDraw.Draw(image)
     draw.text((55, 35), "个体误差与队列总床日是两个读数", font=font(38, True), fill=INK)
-    draw.text((55, 92), "直接反变换偏向个体中位数；smearing 用训练残差校正队列均值。", font=font(22), fill=MUTED)
+    draw.text((55, 92), "直接反变换偏向个体中位数；smearing 用训练集折外残差校正队列均值。", font=font(22), fill=MUTED)
     draw.rounded_rectangle((45, 145, 1455, 830), radius=20, fill=WHITE)
     colors = {"individual_direct": BLUE, "cohort_smeared": ORANGE}
     x_positions = {"individual_direct": 460, "cohort_smeared": 1040}
@@ -277,7 +339,7 @@ def write_report(
 
 实验 04 预测从 ICU 入院开始计算的总住院时长；在 48 小时预测时点，这个目标包含了患者已经住满两天这一已知事实。本实验改为 `剩余住院时间=Length_of_stay-2`，只纳入住院时长有效且至少为 2 天的 11,828 次住院。目标仍是医院住院结束时间，不是 ICU 停留时间，也不是康复所需时间。
 
-数据沿用按住院时长十分位划分的 70%/15%/15% 训练、验证和测试结构。中位数填补、缺失指示、标准化和 0.5%—99.5% 分位截尾只从训练数据学习。岭回归、Lasso、直方图梯度提升和随机森林都拟合 `log(1+剩余天数)`；超参数只按验证集直接反变换后的 MAE 选择。
+数据沿用按住院时长十分位划分的 70%/15%/15% 训练、验证和测试结构。中位数填补、缺失指示、标准化和 0.5%—99.5% 分位截尾只从训练数据学习；截尾仅作用于连续生理数值，不改变性别、ICU one-hot、测量次数或距末次测量时间。岭回归、Lasso、直方图梯度提升和随机森林都拟合 `log(1+剩余天数)`；超参数只按验证集直接反变换后的 MAE 选择。
 
 ## 候选模型
 
@@ -291,7 +353,7 @@ def write_report(
 
 {markdown_table(final_metrics, [("readout", "读数"), ("mae_days", "MAE"), ("median_ae_days", "中位绝对误差"), ("rmse_days", "RMSE"), ("r2", "R²"), ("sum_bias_percent", "总床日偏差%")])}
 
-个体读数使用验证集 MAE 最低模型的直接反变换；队列读数使用验证集总床日偏差最小模型的 Duan smearing 校正。后者使用训练残差估计乘法因子，更接近条件均值。两者的模型和选择标准都不同，不应把总量校准较好解释成个体出院日期已经准确。
+个体读数使用验证集 MAE 最低模型的直接反变换；队列读数使用验证集总床日偏差最小模型的 Duan smearing 校正。后者使用训练集五折的折外残差估计乘法因子，避免树模型因训练残差过小而系统性低估校正幅度。两者的模型和选择标准都不同，不应把总量校准较好解释成个体出院日期已经准确。
 
 ![个体误差与总床日](output/report_figures/readout_comparison.png)
 
@@ -313,7 +375,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-dir", type=Path, default=default_data_dir())
     parser.add_argument("--output-dir", type=Path, default=EXPERIMENT_DIR / "output")
     parser.add_argument("--cache-dir", type=Path, default=ROOT / "Experiments" / "shared" / "output" / "data")
-    parser.add_argument("--random-state", type=int, default=20260904)
+    parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument("--bootstrap-repeats", type=int, default=1000)
     return parser.parse_args()
 
@@ -346,9 +408,14 @@ def main() -> None:
     smearing: dict[tuple[str, float], float] = {}
     for model_name, parameters in candidates.items():
         for parameter in parameters:
-            model = build_model(model_name, parameter, args.random_state)
+            model = build_model(model_name, parameter, args.random_state, feature_names)
             model.fit(x[splits["train"]], np.log1p(remaining[splits["train"]]))
-            factor = smearing_factor(model, x[splits["train"]], remaining[splits["train"]])
+            factor = out_of_fold_smearing_factor(
+                model,
+                x[splits["train"]],
+                remaining[splits["train"]],
+                random_state=args.random_state,
+            )
             fitted[(model_name, parameter)] = model
             smearing[(model_name, parameter)] = factor
             # Candidate settings are compared on validation only.  Test is
@@ -398,11 +465,26 @@ def main() -> None:
     selected_cohort_parameter = float(aggregate_ranking.iloc[0]["parameter"])
 
     development = np.sort(np.concatenate([splits["train"], splits["validation"]]))
-    individual_model = build_model(selected_individual_model, selected_individual_parameter, args.random_state)
+    individual_model = build_model(
+        selected_individual_model,
+        selected_individual_parameter,
+        args.random_state,
+        feature_names,
+    )
     individual_model.fit(x[development], np.log1p(remaining[development]))
-    cohort_model = build_model(selected_cohort_model, selected_cohort_parameter, args.random_state)
+    cohort_model = build_model(
+        selected_cohort_model,
+        selected_cohort_parameter,
+        args.random_state,
+        feature_names,
+    )
     cohort_model.fit(x[development], np.log1p(remaining[development]))
-    cohort_smearing = smearing_factor(cohort_model, x[development], remaining[development])
+    cohort_smearing = out_of_fold_smearing_factor(
+        cohort_model,
+        x[development],
+        remaining[development],
+        random_state=args.random_state,
+    )
     test_index = splits["test"]
     final_predictions = {
         "individual_direct": predict_remaining(individual_model, x[test_index], 1.0),
@@ -481,6 +563,8 @@ def main() -> None:
         "individual_selection_rule": "minimum validation direct-inverse MAE, then RMSE",
         "cohort_selection_rule": "minimum absolute validation smeared sum bias, then MAE",
         "cohort_smearing_factor": cohort_smearing,
+        "cohort_smearing_estimation": "five-fold out-of-fold residuals",
+        "winsorized_feature_count": int(winsor_column_mask(feature_names).sum()),
         "random_state": args.random_state,
         "bootstrap_repeats": args.bootstrap_repeats,
         "cache_hit": bool(cache_hit),

@@ -91,42 +91,75 @@ def make_quantile_splits(y: np.ndarray, random_state: int) -> dict[str, np.ndarr
 class QuantileClipper(BaseEstimator, TransformerMixin):
     """Clip each feature using bounds learned from the training partition only."""
 
-    def __init__(self, lower: float = 0.005, upper: float = 0.995):
+    def __init__(
+        self,
+        column_mask: np.ndarray | None = None,
+        lower: float = 0.005,
+        upper: float = 0.995,
+    ):
+        self.column_mask = column_mask
         self.lower = lower
         self.upper = upper
 
     def fit(self, x, y=None):
         values = np.asarray(x, dtype=float)
+        self.column_mask_ = (
+            np.ones(values.shape[1], dtype=bool)
+            if self.column_mask is None
+            else np.asarray(self.column_mask, dtype=bool)
+        )
         lower_bounds = []
         upper_bounds = []
-        for column in values.T:
+        for column in values[:, self.column_mask_].T:
             observed = column[np.isfinite(column)]
             if len(observed):
                 lower_bounds.append(float(np.quantile(observed, self.lower)))
                 upper_bounds.append(float(np.quantile(observed, self.upper)))
             else:
-                lower_bounds.append(math.nan)
-                upper_bounds.append(math.nan)
+                lower_bounds.append(-np.inf)
+                upper_bounds.append(np.inf)
         self.lower_bounds_ = np.asarray(lower_bounds)
         self.upper_bounds_ = np.asarray(upper_bounds)
         return self
 
     def transform(self, x):
-        values = np.asarray(x, dtype=float)
-        return np.clip(values, self.lower_bounds_, self.upper_bounds_)
+        values = np.asarray(x, dtype=float).copy()
+        values[:, self.column_mask_] = np.clip(
+            values[:, self.column_mask_], self.lower_bounds_, self.upper_bounds_
+        )
+        return values
 
 
-def build_model(name: str, random_state: int):
+def winsor_column_mask(columns: list[str]) -> np.ndarray:
+    excluded = {"Age", "Gender"}
+    return np.asarray(
+        [
+            not (
+                column in excluded
+                or column.startswith("ICUType_")
+                or column.endswith("__count")
+                or column.endswith("__hours_since_last")
+            )
+            for column in columns
+        ],
+        dtype=bool,
+    )
+
+
+def build_model(name: str, random_state: int, feature_names: list[str] | None = None):
+    clipper = QuantileClipper(
+        winsor_column_mask(feature_names) if feature_names is not None else None
+    )
     if name == "ridge_log_target":
         return make_pipeline(
-            QuantileClipper(),
+            clipper,
             SimpleImputer(strategy="median", add_indicator=True, keep_empty_features=True),
             StandardScaler(),
             Ridge(alpha=10.0),
         )
     if name == "hist_gradient_boosting_log_target":
         return make_pipeline(
-            QuantileClipper(),
+            clipper,
             SimpleImputer(strategy="median", add_indicator=True, keep_empty_features=True),
             HistGradientBoostingRegressor(
                 learning_rate=0.05,
@@ -268,7 +301,7 @@ def draw_observed_vs_predicted(
         draw.text((92, py - 10), str(day), font=font(15), fill=MUTED)
     draw.rectangle((x0, y0, x1, y1), outline=INK, width=2)
     draw.line((x0, y1, x1, y0), fill=GREEN, width=3)
-    rng = np.random.default_rng(20260906)
+    rng = np.random.default_rng(42)
     selected = rng.choice(len(y_true), size=min(1800, len(y_true)), replace=False)
     for observed, predicted in zip(y_true[selected], prediction[selected]):
         px = x0 + min(math.log1p(float(observed)), max_log) / max_log * (x1 - x0)
@@ -325,7 +358,7 @@ def write_report(
 
 ## 训练设计
 
-数据按住院时长十分位固定分为训练集 {metadata['split_sizes']['train']:,} 例、验证集 {metadata['split_sizes']['validation']:,} 例和测试集 {metadata['split_sizes']['test']:,} 例。每个时序变量仍采用实验 02 的九类摘要特征；连续输入按训练集 0.5% 和 99.5% 分位截尾，所有中位数填补、缺失指示和标准化参数也只从训练集学习。住院时长呈明显右偏，因此两类模型都拟合 `log(1 + LOS)`，预测后再变换回天数，并限制在 2 天至训练集最大 LOS 之间，防止线性模型对未覆盖极端值产生无依据外推。岭回归提供线性、可审计的基线，直方图梯度提升允许阈值、非线性和变量交互。时间窗与模型只按验证集 MAE 选择，最终模型再用训练集与验证集合并拟合，并在此前未使用的测试集上评价。
+数据按住院时长十分位固定分为训练集 {metadata['split_sizes']['train']:,} 例、验证集 {metadata['split_sizes']['validation']:,} 例和测试集 {metadata['split_sizes']['test']:,} 例。每个时序变量仍采用实验 02 的九类摘要特征；训练集 0.5% 和 99.5% 分位截尾只作用于连续生理统计，不改变年龄、性别、ICU one-hot、测量次数和距末次测量时间，所有中位数填补、缺失指示和标准化参数也只从训练集学习。住院时长呈明显右偏，因此两类模型都拟合 `log(1 + LOS)`，预测后再变换回天数，并限制在 2 天至训练集最大 LOS 之间，防止线性模型对未覆盖极端值产生无依据外推。岭回归提供线性、可审计的基线，直方图梯度提升允许阈值、非线性和变量交互。时间窗与模型只按验证集 MAE 选择，最终模型再用训练集与验证集合并拟合，并在此前未使用的测试集上评价。
 
 数学上，岭回归在对数结局上寻找加权和 $z=\beta_0+x^T\beta$，同时最小化预测残差与 $\alpha\|\beta\|_2^2$，后一个惩罚项会压缩不稳定的大系数；天数预测为 $\exp(z)-1$。梯度提升则从一个初始预测开始，按 $F_m(x)=F_{{m-1}}(x)+\eta h_m(x)$ 逐棵加入小树来修正残差，因此能表示“某项指标超过阈值后风险变化”以及变量之间的组合。两者使用相同输入和同一划分，差异主要来自函数形式。
 
@@ -354,7 +387,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=EXPERIMENT_DIR / "output")
     parser.add_argument("--cache-dir", type=Path, default=ROOT / "Experiments" / "shared" / "output" / "data")
     parser.add_argument("--horizons", type=int, nargs="+", default=[6, 12, 24, 48])
-    parser.add_argument("--random-state", type=int, default=20260906)
+    parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument("--bootstrap-repeats", type=int, default=1000)
     parser.add_argument("--max-records", type=int, default=None)
     parser.add_argument("--no-cache", action="store_true")
@@ -422,7 +455,7 @@ def main() -> None:
     for horizon in horizons:
         x = matrices[horizon][valid]
         for name in model_names:
-            model = build_model(name, args.random_state)
+            model = build_model(name, args.random_state, columns)
             model.fit(x[split_indices["train"]], np.log1p(y[split_indices["train"]]))
             fitted[(horizon, name)] = model
             # Candidate models are compared on validation only.  The test set is
@@ -453,7 +486,7 @@ def main() -> None:
     train_validation = np.sort(
         np.concatenate([split_indices["train"], split_indices["validation"]])
     )
-    final_model = build_model(selected_name, args.random_state)
+    final_model = build_model(selected_name, args.random_state, columns)
     final_x = matrices[selected_horizon][valid]
     final_model.fit(final_x[train_validation], np.log1p(y[train_validation]))
     final_prediction = predict_days(
@@ -513,7 +546,8 @@ def main() -> None:
         "feature_count_per_horizon": len(columns),
         "split_sizes": {key: int(len(value)) for key, value in split_indices.items()},
         "selection_rule": "minimum validation MAE; RMSE, horizon and model name break ties",
-        "feature_winsorization": "training 0.5th and 99.5th percentiles",
+        "feature_winsorization": "training 0.5th and 99.5th percentiles for physiological values only",
+        "winsorized_feature_count": int(winsor_column_mask(columns).sum()),
         "prediction_bounds": "2 days to the maximum LOS observed in the fitting partition",
         "selected_model": selected_name,
         "selected_horizon_hours": selected_horizon,

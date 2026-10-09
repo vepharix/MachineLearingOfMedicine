@@ -12,7 +12,14 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "release" / "outcomes.csv"
+SOURCE = next(
+    (
+        path
+        for path in (ROOT.parent / "release" / "outcomes.csv", ROOT / "release" / "outcomes.csv")
+        if path.exists()
+    ),
+    ROOT / "release" / "outcomes.csv",
+)
 OUTPUT = Path(__file__).resolve().parent / "output" / "correlation"
 VARIABLES = ["SAPS-I", "SOFA", "Survival", "Length_of_stay", "In-hospital_death"]
 DISPLAY = {
@@ -85,7 +92,7 @@ def draw_scatter(df: pd.DataFrame, x_col: str, y_col: str, path: Path) -> None:
     y_raw = pair[y_col].to_numpy(dtype=float)
     binary = y_col == "In-hospital_death"
     log_y = y_col in {"Survival", "Length_of_stay"}
-    rng = np.random.default_rng(20260903)
+    rng = np.random.default_rng(42)
     y_plot = y_raw + rng.normal(0, 0.055, len(y_raw)) if binary else (np.log10(y_raw) if log_y else y_raw)
 
     width, height = 960, 700

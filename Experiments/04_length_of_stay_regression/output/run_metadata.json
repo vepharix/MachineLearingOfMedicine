@@ -17,12 +17,13 @@
     "test": 1775
   },
   "selection_rule": "minimum validation MAE; RMSE, horizon and model name break ties",
-  "feature_winsorization": "training 0.5th and 99.5th percentiles",
+  "feature_winsorization": "training 0.5th and 99.5th percentiles for physiological values only",
+  "winsorized_feature_count": 261,
   "prediction_bounds": "2 days to the maximum LOS observed in the fitting partition",
   "selected_model": "hist_gradient_boosting_log_target",
   "selected_horizon_hours": 48,
   "bootstrap_repeats": 1000,
-  "random_state": 20260906,
+  "random_state": 42,
   "feature_cache_hit": true,
   "scikit_learn_version": "1.9.0",
   "quality_counters": {

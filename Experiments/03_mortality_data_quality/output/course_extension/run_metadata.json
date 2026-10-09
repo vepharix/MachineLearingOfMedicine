@@ -16,13 +16,13 @@
       ],
       [
         "model",
-        "HistGradientBoostingClassifier(early_stopping=True, learning_rate=0.03,\n                               max_iter=250, max_leaf_nodes=15,\n                               min_samples_leaf=30, random_state=20260906)"
+        "HistGradientBoostingClassifier(early_stopping=True, l2_regularization=1.0,\n                               learning_rate=0.03, max_iter=250,\n                               max_leaf_nodes=15, min_samples_leaf=30,\n                               random_state=42)"
       ]
     ],
     "transform_input": null,
     "verbose": false,
     "imputer": "SimpleImputer(keep_empty_features=True, strategy='median')",
-    "model": "HistGradientBoostingClassifier(early_stopping=True, learning_rate=0.03,\n                               max_iter=250, max_leaf_nodes=15,\n                               min_samples_leaf=30, random_state=20260906)",
+    "model": "HistGradientBoostingClassifier(early_stopping=True, l2_regularization=1.0,\n                               learning_rate=0.03, max_iter=250,\n                               max_leaf_nodes=15, min_samples_leaf=30,\n                               random_state=42)",
     "imputer__add_indicator": false,
     "imputer__copy": true,
     "imputer__fill_value": null,
@@ -33,7 +33,7 @@
     "model__class_weight": null,
     "model__early_stopping": true,
     "model__interaction_cst": null,
-    "model__l2_regularization": 0.0,
+    "model__l2_regularization": 1.0,
     "model__learning_rate": 0.03,
     "model__loss": "log_loss",
     "model__max_bins": 255,
@@ -44,14 +44,24 @@
     "model__min_samples_leaf": 30,
     "model__monotonic_cst": null,
     "model__n_iter_no_change": 10,
-    "model__random_state": 20260906,
+    "model__random_state": 42,
     "model__scoring": "loss",
     "model__tol": 1e-07,
     "model__validation_fraction": 0.1,
     "model__verbose": 0,
     "model__warm_start": false
   },
+  "interpretation_models": {
+    "permutation_importance_and_partial_dependence": "primary hist_gradient_boosting with raw_mean_indicator",
+    "coefficient_odds_ratio_table": "primary logistic with raw_winsor_median_indicator"
+  },
+  "permutation_importance": {
+    "evaluation_split": "validation",
+    "sample_fraction": 1.0,
+    "repeats": 5,
+    "scoring": "average_precision"
+  },
   "class_imbalance": "class_weight None versus balanced is tuned for logistic regression",
   "cache_hit": true,
-  "random_state": 20260906
+  "random_state": 42
 }

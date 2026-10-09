@@ -32,6 +32,20 @@ class RemainingLengthOfStayTests(unittest.TestCase):
         factor = MODULE.smearing_factor(Dummy(), np.zeros((3, 1)), y)
         self.assertAlmostEqual(factor, (1.0 + 2.0 + 4.0) / 3.0)
 
+    def test_winsorization_excludes_categories_and_measurement_process(self) -> None:
+        columns = [
+            "Age",
+            "Gender",
+            "ICUType_1",
+            "GCS__last",
+            "GCS__count",
+            "GCS__hours_since_last",
+        ]
+        np.testing.assert_array_equal(
+            MODULE.winsor_column_mask(columns),
+            np.array([False, False, False, True, False, False]),
+        )
+
     def test_metrics_separate_individual_and_aggregate_error(self) -> None:
         result = MODULE.regression_metrics(np.array([1.0, 9.0]), np.array([4.0, 4.0]))
         self.assertEqual(result["mae_days"], 4.0)

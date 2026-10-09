@@ -1,7 +1,7 @@
 {
   "record_count": 12000,
   "death_count": 1707,
-  "random_state": 20260904,
+  "random_state": 42,
   "horizons_hours": [
     6,
     12,
@@ -18,18 +18,19 @@
   },
   "feature_columns": 341,
   "selected_configs": {
-    "logistic": "clean_winsor_median_indicator",
-    "hist_gradient_boosting": "raw_median"
+    "logistic": "raw_winsor_median_indicator",
+    "hist_gradient_boosting": "raw_mean_indicator"
   },
   "candidate_configs": {
     "logistic": [
-      "raw_winsor_median_indicator",
       "clean_winsor_median_indicator",
+      "raw_winsor_median_indicator",
       "raw_median_indicator"
     ],
     "hist_gradient_boosting": [
-      "raw_median_indicator",
-      "raw_median"
+      "raw_mean_indicator",
+      "clean_median_indicator",
+      "raw_median_indicator"
     ]
   },
   "configs": [
@@ -166,12 +167,12 @@
     ]
   },
   "hard_outcome_anomalies": 95,
-  "extraction_seconds": 672.0287458999665,
+  "extraction_seconds": 559.8297296999954,
   "scikit_learn_version": "1.9.0",
   "hard_outcome_anomalies_by_split": {
-    "train": 67,
-    "validation": 18,
-    "test": 10
+    "train": 61,
+    "validation": 16,
+    "test": 18
   },
   "secondary_outputs": [
     "calibration_metrics.csv",

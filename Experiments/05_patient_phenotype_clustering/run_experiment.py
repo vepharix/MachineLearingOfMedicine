@@ -392,7 +392,7 @@ def draw_pca_scatter(
     xlow, xhigh = np.quantile(scores[:, 0], [0.005, 0.995])
     ylow, yhigh = np.quantile(scores[:, 1], [0.005, 0.995])
     draw.rectangle((x0, y0, x1, y1), outline=INK, width=2)
-    rng = np.random.default_rng(20260906)
+    rng = np.random.default_rng(42)
     selected = rng.choice(len(scores), size=min(5000, len(scores)), replace=False)
     for index in selected:
         px = x0 + np.clip((scores[index, 0] - xlow) / (xhigh - xlow), 0, 1) * (x1 - x0)
@@ -546,7 +546,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-dir", type=Path, default=default_data_dir())
     parser.add_argument("--output-dir", type=Path, default=EXPERIMENT_DIR / "output")
     parser.add_argument("--cache-dir", type=Path, default=ROOT / "Experiments" / "shared" / "output" / "data")
-    parser.add_argument("--random-state", type=int, default=20260906)
+    parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument("--stability-repeats", type=int, default=20)
     parser.add_argument("--max-records", type=int, default=None)
     parser.add_argument("--no-cache", action="store_true")

@@ -46,6 +46,20 @@ class LengthOfStayRegressionTests(unittest.TestCase):
         transformed = clipper.transform(np.array([[100.0]]))
         self.assertAlmostEqual(float(transformed[0, 0]), 2.25)
 
+    def test_winsorization_excludes_categories_and_measurement_process(self) -> None:
+        columns = [
+            "Age",
+            "Gender",
+            "ICUType_1",
+            "HR__mean",
+            "HR__count",
+            "HR__hours_since_last",
+        ]
+        np.testing.assert_array_equal(
+            MODULE.winsor_column_mask(columns),
+            np.array([False, False, False, True, False, False]),
+        )
+
     def test_quantile_split_is_disjoint_and_complete(self) -> None:
         y = np.repeat(np.arange(2.0, 22.0), 10)
         splits = MODULE.make_quantile_splits(y, 7)

@@ -42,6 +42,7 @@ from Experiments.shared.icu_feature_cache import (  # noqa: E402
     load_or_extract_features,
     read_outcomes,
 )
+import run_experiment as primary_experiment  # noqa: E402
 
 
 BG, WHITE, INK, MUTED, GRID = "#F7F8FA", "#FFFFFF", "#17212B", "#5B6773", "#D9DEE5"
@@ -218,7 +219,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-dir", type=Path, default=default_data_dir())
     parser.add_argument("--cache-dir", type=Path, default=ROOT / "Experiments/shared/output/data")
     parser.add_argument("--output-dir", type=Path, default=EXPERIMENT_DIR / "output/course_extension")
-    parser.add_argument("--random-state", type=int, default=20260906)
+    parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument("--max-records", type=int, default=None)
     return parser.parse_args()
 
@@ -292,13 +293,19 @@ def main() -> None:
         }
     )
 
+    primary_configs = {config.name: config for config in primary_experiment.CONFIGS}
+    primary_hgb = primary_experiment.build_model(
+        "hist_gradient_boosting",
+        primary_configs["raw_mean_indicator"],
+        columns,
+        args.random_state,
+    ).fit(x[splits["train"]], y[splits["train"]])
     importance_result = permutation_importance(
-        selected,
+        primary_hgb,
         x[splits["validation"]],
         y[splits["validation"]],
         scoring="average_precision",
-        n_repeats=3,
-        max_samples=0.70,
+        n_repeats=5,
         random_state=args.random_state,
         n_jobs=-1,
     )
@@ -323,7 +330,7 @@ def main() -> None:
     for feature in importance.head(3)["feature"]:
         feature_index = columns.index(feature)
         result = partial_dependence(
-            selected,
+            primary_hgb,
             pdp_x,
             features=[feature_index],
             grid_resolution=20,
@@ -335,12 +342,30 @@ def main() -> None:
             )
     pdp = pd.DataFrame(pdp_rows)
 
+    primary_logistic = primary_experiment.build_model(
+        "logistic",
+        primary_configs["raw_winsor_median_indicator"],
+        columns,
+        args.random_state,
+    ).fit(x[splits["train"]], y[splits["train"]])
+    logistic_feature_names = primary_logistic.named_steps["imputer"].get_feature_names_out(columns)
+    logistic_coefficients = primary_logistic.named_steps["model"].coef_[0]
+    logistic_interpretation = pd.DataFrame(
+        {
+            "feature": logistic_feature_names,
+            "standardized_coefficient": logistic_coefficients,
+            "odds_ratio_per_1sd": np.exp(logistic_coefficients),
+            "absolute_coefficient": np.abs(logistic_coefficients),
+        }
+    ).sort_values("absolute_coefficient", ascending=False)
+
     cv_results.to_csv(output / "tuning_cv_results.csv", index=False)
     validation.to_csv(output / "validation_model_comparison.csv", index=False)
     final.to_csv(output / "final_test_metrics.csv", index=False)
     curve.to_csv(output / "learning_curve.csv", index=False)
     importance.to_csv(output / "permutation_importance.csv", index=False)
     pdp.to_csv(output / "partial_dependence.csv", index=False)
+    logistic_interpretation.to_csv(output / "logistic_coefficients_odds_ratios.csv", index=False)
     draw_learning_curve(curve, figures / "learning_curve.png")
     draw_importance(importance, figures / "permutation_importance.png")
     draw_pdp(pdp, figures / "partial_dependence.png")
@@ -350,6 +375,16 @@ def main() -> None:
         "selection": "5-fold training CV AUPRC tunes each family; validation AUPRC selects family; test opened once",
         "selected_model": selected_name,
         "selected_parameters": selected.get_params(deep=True),
+        "interpretation_models": {
+            "permutation_importance_and_partial_dependence": "primary hist_gradient_boosting with raw_mean_indicator",
+            "coefficient_odds_ratio_table": "primary logistic with raw_winsor_median_indicator",
+        },
+        "permutation_importance": {
+            "evaluation_split": "validation",
+            "sample_fraction": 1.0,
+            "repeats": 5,
+            "scoring": "average_precision",
+        },
         "class_imbalance": "class_weight None versus balanced is tuned for logistic regression",
         "cache_hit": cache_hit,
         "random_state": args.random_state,

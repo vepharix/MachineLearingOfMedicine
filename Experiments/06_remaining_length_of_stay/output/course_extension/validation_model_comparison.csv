@@ -1,3 +1,3 @@
 model,best_parameters,n,mae_days,rmse_days,r2,sum_bias_percent
-hist_gradient_boosting,"{""histgradientboostingregressor__l2_regularization"": 1.0, ""histgradientboostingregressor__learning_rate"": 0.03, ""histgradientboostingregressor__max_leaf_nodes"": 31}",1774,6.5761883030610555,11.836322284235024,0.07946911533625467,-25.562439915405584
-ridge,"{""ridge__alpha"": 1000.0}",1774,6.642105643570036,11.889243855267827,0.07121911221178345,-25.077338354545113
+hist_gradient_boosting,"{""histgradientboostingregressor__l2_regularization"": 1.0, ""histgradientboostingregressor__learning_rate"": 0.03, ""histgradientboostingregressor__max_leaf_nodes"": 31}",1774,6.682225007642303,12.828380868074015,0.06451946799768915,-26.138900146716267
+ridge,"{""ridge__alpha"": 1000.0}",1774,6.829268053766962,12.82648498754961,0.06479595312616238,-24.68743820019601

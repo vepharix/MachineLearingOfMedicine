@@ -12,7 +12,7 @@
     "steps": [
       [
         "quantileclipper",
-        "QuantileClipper()"
+        "QuantileClipper(column_mask=array([False, False,  True,  True, False, False, False, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, Fals...\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False]))"
       ],
       [
         "simpleimputer",
@@ -20,14 +20,15 @@
       ],
       [
         "histgradientboostingregressor",
-        "HistGradientBoostingRegressor(early_stopping=True, l2_regularization=1.0,\n                              learning_rate=0.03, max_iter=300,\n                              min_samples_leaf=30, random_state=20260906)"
+        "HistGradientBoostingRegressor(early_stopping=True, l2_regularization=1.0,\n                              learning_rate=0.03, max_iter=300,\n                              min_samples_leaf=30, random_state=42)"
       ]
     ],
     "transform_input": null,
     "verbose": false,
-    "quantileclipper": "QuantileClipper()",
+    "quantileclipper": "QuantileClipper(column_mask=array([False, False,  True,  True, False, False, False, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, Fals...\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False,  True,\n        True,  True,  True,  True,  True, False,  True, False]))",
     "simpleimputer": "SimpleImputer(add_indicator=True, keep_empty_features=True, strategy='median')",
-    "histgradientboostingregressor": "HistGradientBoostingRegressor(early_stopping=True, l2_regularization=1.0,\n                              learning_rate=0.03, max_iter=300,\n                              min_samples_leaf=30, random_state=20260906)",
+    "histgradientboostingregressor": "HistGradientBoostingRegressor(early_stopping=True, l2_regularization=1.0,\n                              learning_rate=0.03, max_iter=300,\n                              min_samples_leaf=30, random_state=42)",
+    "quantileclipper__column_mask": "[False False  True  True False False False False  True  True  True  True\n  True  True False  True False  True  True  True  True  True  True False\n  True False  True  True  True  True  True  True False  True False  True\n  True  True  True  True  True False  True False  True  True  True  True\n  True  True False  True False  True  True  True  True  True  True False\n  True False  True  True  True  True  True  True False  True False  True\n  True  True  True  True  True False  True False  True  True  True  True\n  True  True False  True False  True  True  True  True  True  True False\n  True False  True  True  True  True  True  True False  True False  True\n  True  True  True  True  True False  True False  True  True  True  True\n  True  True False  True False  True  True  True  True  True  True False\n  True False  True  True  True  True  True  True False  True False  True\n  True  True  True  True  True False  True False  True  True  True  True\n  True  True False  True False  True  True  True  True  True  True False\n  True False  True  True  True  True  True  True False  True False  True\n  True  True  True  True  True False  True False  True  True  True  True\n  True  True False  True False  True  True  True  True  True  True False\n  True False  True  True  True  True  True  True False  True False  True\n  True  True  True  True  True False  True False  True  True  True  True\n  True  True False  True False  True  True  True  True  True  True False\n  True False  True  True  True  True  True  True False  True False  True\n  True  True  True  True  True False  True False  True  True  True  True\n  True  True False  True False  True  True  True  True  True  True False\n  True False  True  True  True  True  True  True False  True False  True\n  True  True  True  True  True False  True False  True  True  True  True\n  True  True False  True False  True  True  True  True  True  True False\n  True False  True  True  True  True  True  True False  True False  True\n  True  True  True  True  True False  True False  True  True  True  True\n  True  True False  True False]",
     "quantileclipper__lower": 0.005,
     "quantileclipper__upper": 0.995,
     "simpleimputer__add_indicator": true,
@@ -51,12 +52,18 @@
     "histgradientboostingregressor__monotonic_cst": null,
     "histgradientboostingregressor__n_iter_no_change": 10,
     "histgradientboostingregressor__quantile": null,
-    "histgradientboostingregressor__random_state": 20260906,
+    "histgradientboostingregressor__random_state": 42,
     "histgradientboostingregressor__scoring": "loss",
     "histgradientboostingregressor__tol": 1e-07,
     "histgradientboostingregressor__validation_fraction": 0.1,
     "histgradientboostingregressor__verbose": 0,
     "histgradientboostingregressor__warm_start": false
+  },
+  "permutation_importance": {
+    "evaluation_split": "validation",
+    "sample_fraction": 1.0,
+    "repeats": 5,
+    "scoring": "negative MAE on the days scale"
   },
   "ols_features": [
     "Age",
@@ -79,5 +86,5 @@
     "WBC__last"
   ],
   "cache_hit": true,
-  "random_state": 20260906
+  "random_state": 42
 }

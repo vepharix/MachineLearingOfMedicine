@@ -14,6 +14,8 @@ import pandas as pd
 import statsmodels.api as sm
 from PIL import Image, ImageDraw, ImageFont
 from scipy import stats
+from statsmodels.stats.diagnostic import het_breuschpagan
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.stats.stattools import durbin_watson
 from sklearn.base import clone
 from sklearn.inspection import permutation_importance
@@ -86,17 +88,17 @@ def regression_metrics(y: np.ndarray, prediction: np.ndarray) -> dict[str, float
     }
 
 
-def searches(random_state: int) -> dict[str, GridSearchCV]:
+def searches(random_state: int, feature_names: list[str]) -> dict[str, GridSearchCV]:
     cv = KFold(n_splits=5, shuffle=True, random_state=random_state)
     common = dict(scoring=negative_mae_days, cv=cv, n_jobs=-1, return_train_score=True)
     return {
         "ridge": GridSearchCV(
-            base.build_model("ridge", 1.0, random_state),
+            base.build_model("ridge", 1.0, random_state, feature_names),
             {"ridge__alpha": [0.1, 1.0, 10.0, 100.0, 1000.0]},
             **common,
         ),
         "hist_gradient_boosting": GridSearchCV(
-            base.build_model("hist_gradient_boosting", 1.0, random_state),
+            base.build_model("hist_gradient_boosting", 1.0, random_state, feature_names),
             {
                 "histgradientboostingregressor__learning_rate": [0.03, 0.06],
                 "histgradientboostingregressor__max_leaf_nodes": [15, 31],
@@ -114,7 +116,14 @@ def fit_ols(
     train: np.ndarray,
     validation: np.ndarray,
     test: np.ndarray,
-) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, float], np.ndarray, np.ndarray]:
+) -> tuple[
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    dict[str, float],
+    np.ndarray,
+    np.ndarray,
+]:
     indices = [columns.index(name) for name in OLS_FEATURES]
     selected = np.asarray(x[:, indices], dtype=float)
     medians = np.nanmedian(selected[train], axis=0)
@@ -144,6 +153,18 @@ def fit_ols(
         metric_rows.append({"split": split_name, **regression_metrics(y[split_index], prediction)})
     fitted_log = model.predict(design[train])
     residual_log = np.log1p(y[train]) - fitted_log
+    bp_lm, bp_lm_pvalue, bp_f, bp_f_pvalue = het_breuschpagan(
+        residual_log, design[train]
+    )
+    vif = pd.DataFrame(
+        {
+            "feature": OLS_FEATURES,
+            "vif": [
+                float(variance_inflation_factor(standardized[train], index))
+                for index in range(standardized.shape[1])
+            ],
+        }
+    )
     summary = {
         "n": int(model.nobs),
         "r2_log_scale": float(model.rsquared),
@@ -152,9 +173,13 @@ def fit_ols(
         "bic": float(model.bic),
         "durbin_watson": float(durbin_watson(residual_log)),
         "condition_number": float(model.condition_number),
+        "breusch_pagan_lm": float(bp_lm),
+        "breusch_pagan_lm_p_value": float(bp_lm_pvalue),
+        "breusch_pagan_f": float(bp_f),
+        "breusch_pagan_f_p_value": float(bp_f_pvalue),
         "target": "log1p(remaining_los_days)",
     }
-    return coefficients, pd.DataFrame(metric_rows), summary, fitted_log, residual_log
+    return coefficients, vif, pd.DataFrame(metric_rows), summary, fitted_log, residual_log
 
 
 def draw_learning_curve(frame: pd.DataFrame, destination: Path) -> None:
@@ -188,7 +213,7 @@ def draw_residual_diagnostics(fitted: np.ndarray, residual: np.ndarray, destinat
     image = Image.new("RGB", (1800, 650), BG)
     draw = ImageDraw.Draw(image)
     draw.text((50, 28), "OLS 残差诊断（训练集，log1p 尺度）", font=font(34, True), fill=INK)
-    rng = np.random.default_rng(20260906)
+    rng = np.random.default_rng(42)
     chosen = rng.choice(len(fitted), size=min(2500, len(fitted)), replace=False)
     fit_sample, residual_sample = fitted[chosen], residual[chosen]
     panels = [(50, 120, 570, 590), (640, 120, 1160, 590), (1230, 120, 1750, 590)]
@@ -245,7 +270,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-dir", type=Path, default=default_data_dir())
     parser.add_argument("--cache-dir", type=Path, default=ROOT / "Experiments/shared/output/data")
     parser.add_argument("--output-dir", type=Path, default=EXPERIMENT_DIR / "output/course_extension")
-    parser.add_argument("--random-state", type=int, default=20260906)
+    parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument("--max-records", type=int, default=None)
     parser.add_argument(
         "--diagnostics-only",
@@ -279,7 +304,7 @@ def main() -> None:
     figures.mkdir(parents=True, exist_ok=True)
 
     if args.diagnostics_only:
-        coefficients, ols_metrics, ols_summary, fitted_log, residual_log = fit_ols(
+        coefficients, vif, ols_metrics, ols_summary, fitted_log, residual_log = fit_ols(
             x,
             remaining,
             columns,
@@ -288,6 +313,7 @@ def main() -> None:
             splits["test"],
         )
         coefficients.to_csv(output / "ols_coefficients.csv", index=False)
+        vif.to_csv(output / "ols_vif.csv", index=False)
         ols_metrics.to_csv(output / "ols_validation_test_metrics.csv", index=False)
         (output / "ols_model_summary.json").write_text(
             json.dumps(ols_summary, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -300,7 +326,7 @@ def main() -> None:
 
     cv_frames, validation_rows, fitted = [], [], {}
     y_log_train = np.log1p(remaining[splits["train"]])
-    for name, search in searches(args.random_state).items():
+    for name, search in searches(args.random_state, columns).items():
         search.fit(x[splits["train"]], y_log_train)
         fitted[name] = search.best_estimator_
         frame = pd.DataFrame(search.cv_results_)
@@ -349,8 +375,7 @@ def main() -> None:
         x[splits["validation"]],
         np.log1p(remaining[splits["validation"]]),
         scoring=negative_mae_days,
-        n_repeats=3,
-        max_samples=0.70,
+        n_repeats=5,
         random_state=args.random_state,
         n_jobs=-1,
     )
@@ -362,7 +387,7 @@ def main() -> None:
         }
     ).sort_values("importance_mean", ascending=False)
 
-    coefficients, ols_metrics, ols_summary, fitted_log, residual_log = fit_ols(
+    coefficients, vif, ols_metrics, ols_summary, fitted_log, residual_log = fit_ols(
         x,
         remaining,
         columns,
@@ -376,6 +401,7 @@ def main() -> None:
     curve.to_csv(output / "learning_curve.csv", index=False)
     importance.to_csv(output / "permutation_importance.csv", index=False)
     coefficients.to_csv(output / "ols_coefficients.csv", index=False)
+    vif.to_csv(output / "ols_vif.csv", index=False)
     ols_metrics.to_csv(output / "ols_validation_test_metrics.csv", index=False)
     (output / "ols_model_summary.json").write_text(
         json.dumps(ols_summary, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -389,6 +415,12 @@ def main() -> None:
         "selection": "5-fold training CV MAE tunes each family; validation MAE selects family; test opened once",
         "selected_model": selected_name,
         "selected_parameters": selected.get_params(deep=True),
+        "permutation_importance": {
+            "evaluation_split": "validation",
+            "sample_fraction": 1.0,
+            "repeats": 5,
+            "scoring": "negative MAE on the days scale",
+        },
         "ols_features": OLS_FEATURES,
         "cache_hit": cache_hit,
         "random_state": args.random_state,

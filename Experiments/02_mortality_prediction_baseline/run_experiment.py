@@ -395,7 +395,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-dir", type=Path, default=ROOT / "release")
     parser.add_argument("--output-dir", type=Path, default=EXPERIMENT_DIR / "output")
     parser.add_argument("--horizons", type=int, nargs="+", default=[6, 12, 24, 48])
-    parser.add_argument("--random-state", type=int, default=20260904)
+    parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument("--max-records", type=int, default=None, help="Optional deterministic subset for smoke tests.")
     parser.add_argument("--save-features", action="store_true", help="Save patient-level feature matrices under output/data.")
     return parser.parse_args()
