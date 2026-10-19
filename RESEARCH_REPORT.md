@@ -239,6 +239,8 @@ Brier 分数是预测概率与真实 0/1 结局之间平方误差的平均值，
 
 留一 ICU 类型实验在三类 ICU 上重新训练，在第四类 ICU 的全部病例上评价，并删除 ICU 类型输入。四类留出结果的 AUROC 为 0.805—0.876；平均预测风险在 CSRU 从实际 4.9% 高估到 9.6%，在 MICU 从实际 19.8% 低估到 15.8%。这比固定确认集上的亚组统计更接近分布变化压力测试，但四类 ICU 仍来自同一历史数据源，不是真正的医院外验证。
 
+两个 48 小时模型在同一批确认集重抽样上的配对 Bootstrap（1,000 次，与上表区间同一组重抽样）显示，梯度提升减逻辑回归的 ΔAUROC 为 +0.011（95% CI −0.004—+0.025），ΔAUPRC 为 +0.025（−0.017—+0.065），区间都包含 0。梯度提升的优势方向稳定，但在当前确认集上不显著；选择它的理由是验证集规则与更好的校准，而不是显著更高的判别能力。按 2012 Challenge Event 1 的 min(灵敏度, 阳性预测值) 评分、在验证集上选阈值后，确认集分数为梯度提升 0.488、逻辑回归 0.492；当年官方最高分 0.5353、SAPS-I 参照 0.3125 来自隐藏的 set C，只能作为同一指标下的参考，不能据此排名。两项分析见 `Experiments/03_mortality_data_quality/README.md`。
+
 ### 9.4 训练集内调参与模型解释补充
 
 在上述简单—复杂模型比较之后，又对 48 小时逻辑回归和梯度提升进行了训练集五折网格搜索。逻辑回归比较正则化强度和是否使用类别权重，梯度提升比较学习率、叶节点数与 L2 正则；各模型先在训练折内定参数，再由验证集 AUPRC 选择模型家族。验证集选择学习率 0.03、最多 15 个叶节点、L2=1 的梯度提升，验证集 AUPRC 为 0.580；合并训练集与验证集重拟合后，固定测试集 AUROC/AUPRC/Brier 为 0.874/0.579/0.0862，相比主模型 0.868/0.567/0.0868 属于小幅判别改善，不能解释为大幅跃升。
@@ -293,6 +295,8 @@ Brier 分数是预测概率与真实 0/1 结局之间平方误差的平均值，
 ![个体误差与队列床日](Experiments/06_remaining_length_of_stay/output/report_figures/readout_comparison.png)
 
 队列总体接近仍掩盖了明显亚组误差：smearing 岭回归在 ICUType 2 和 4 分别高估约 8.8% 和 8.4%，在 ICUType 1 和 3 分别低估约 6.7% 和 10.3%；住院总时长至少 25 天者只占测试集约 12.6%，其剩余床日仍被低估约 59.0%。因此，当前结果可以用于解释“个体预测与容量估计为什么需要不同目标”，还不足以作为病区排床或个人出院日期工具。
+
+作为最简单的容量参照，用训练集加验证集的平均剩余住院时间 11.61 天乘以测试集 1,775 人，总床日偏差为 −1.05%（95% CI −5.60%—4.04%，与 smearing 岭回归同一组 1,000 次重抽样），与模型的 −0.71% 没有实质差别。若每类 ICU 各用自己的平均数，偏差为 CCU −12.8%、CSRU +0.2%、MICU −7.9%、SICU +10.0%，模型对应为 −6.7%、+8.8%、−10.3%、+8.4%，两者互有胜负。换用中位数 8 天作常数时，个体 MAE 降到 7.51 天，但总床日低估 31.8%，与梯度提升直接读数低估 25.6% 是同一现象：优化个体绝对误差的预测会系统性少算总床日。结果由 `Experiments/06_remaining_length_of_stay/analyze_plain_average_baseline.py` 生成，见该实验 `output/plain_average_baseline.csv` 和 `plain_average_baseline_by_icu.csv`。
 
 ### 10.4 从线性诊断到训练集内调优
 
@@ -380,9 +384,12 @@ python Experiments/03_mortality_data_quality/run_experiment.py --data-dir ../rel
 python Experiments/03_mortality_data_quality/analyze_selected_models.py --data-dir ../release
 python Experiments/03_mortality_data_quality/analyze_operating_points.py
 python Experiments/03_mortality_data_quality/plot_results.py
+python Experiments/03_mortality_data_quality/analyze_paired_comparison.py
+python Experiments/03_mortality_data_quality/analyze_challenge_score.py
 python Experiments/04_length_of_stay_regression/run_experiment.py --data-dir ../release
 python Experiments/05_patient_phenotype_clustering/run_experiment.py --data-dir ../release
 python Experiments/06_remaining_length_of_stay/run_experiment.py --data-dir ../release
+python Experiments/06_remaining_length_of_stay/analyze_plain_average_baseline.py --data-dir ../release
 ```
 
 前三个已有脚本当前固定从仓库内的 `release/` 读取数据；实验 02 和实验 03 支持 `--data-dir`，本次全量训练实际使用了同级的 `../release`。若在另一台机器复现，应遵照根目录 README 准备数据，或为两个死亡预测实验显式指定私有数据目录。

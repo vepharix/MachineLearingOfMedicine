@@ -62,10 +62,13 @@ python Experiments/03_mortality_data_quality/analyze_selected_models.py
 python Experiments/03_mortality_data_quality/analyze_operating_points.py
 python Experiments/03_mortality_data_quality/plot_results.py
 python Experiments/03_mortality_data_quality/run_course_extension.py
+python Experiments/03_mortality_data_quality/analyze_paired_comparison.py
+python Experiments/03_mortality_data_quality/analyze_challenge_score.py
 python Experiments/04_length_of_stay_regression/run_experiment.py
 python Experiments/05_patient_phenotype_clustering/run_experiment.py
 python Experiments/06_remaining_length_of_stay/run_experiment.py
 python Experiments/06_remaining_length_of_stay/run_course_extension.py
+python Experiments/06_remaining_length_of_stay/analyze_plain_average_baseline.py
 ```
 
 脚本只读取 `release/` 中的原始数据，不会修改它们。
