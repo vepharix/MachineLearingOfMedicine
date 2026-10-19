@@ -88,6 +88,16 @@
 
 留一 ICU 类型压力测试在三类 ICU 上重新训练、在第四类 ICU 的全部记录上评价，并移除 ICU 类型输入。四类留出结果的 AUROC 为 0.805–0.876；平均预测风险在 CSRU 从实际 4.9% 高估到 9.6%，在 MICU 从实际 19.8% 低估到 15.8%。这比固定确认集亚组分析更接近分布变化，但四类 ICU 仍来自同一数据来源，只能称为内部可迁移性压力测试。明细见 [`output/leave_one_icu_out.csv`](output/leave_one_icu_out.csv)。
 
+## 补充：两模型配对比较与 2012 Challenge 同指标参照
+
+这部分只使用 48 小时的两个选定模型（梯度提升 `raw_mean_indicator`、逻辑回归 `raw_winsor_median_indicator`），不重新筛选方案，也不在确认集上调任何参数。
+
+**配对 Bootstrap。** 两个模型各自的置信区间重叠，并不能回答“梯度提升是否确实优于逻辑回归”。`analyze_paired_comparison.py` 读取冻结的确认集预测，在同一批重抽样的 1,800 名患者上同时计算两个模型的指标，再取差值的 2.5% 和 97.5% 分位数；随机种子与 `output/test_metrics.csv` 中 48 小时区间相同，因此两处使用的是同一组 1,000 次重抽样。梯度提升减逻辑回归的 ΔAUROC 为 +0.011（95% CI −0.004 至 +0.025），ΔAUPRC 为 +0.025（−0.017 至 +0.065），ΔBrier 为 −0.005（−0.010 至 +0.000）。三个区间都包含 0：梯度提升在 91%、87% 和 96% 的重抽样中分别取得更高的 AUROC、更高的 AUPRC 和更低的 Brier，方向一致，但在 1,800 例、256 例死亡的确认集上差异不显著。因此主模型选择梯度提升，依据是验证集事先确定的规则、更好的校准（斜率 1.03 对 0.74）和各时间窗方向一致，而不是确认集上的显著优势。明细见 [`output/paired_model_comparison.csv`](output/paired_model_comparison.csv)。
+
+**Challenge 2012 Event 1 分数。** 原 Challenge 的院内死亡二分类任务以 min(灵敏度, 阳性预测值) 评分。`analyze_challenge_score.py` 按主流程在训练集重拟合两个模型，并核对确认集概率与冻结预测完全一致；随后在验证集上选择使该分数最大的阈值（同分取较高阈值），再在确认集上只评价一次。梯度提升的阈值为 0.356，确认集灵敏度 0.488、阳性预测值 0.541，Event 1 分数 0.488（95% CI 0.424—0.551，阈值固定的 1,000 次 Bootstrap）；逻辑回归为 0.492（0.432—0.553）。两模型在这一指标上几乎相同。原 Challenge 官方公布的 Event 1 最高分为 0.5353，SAPS-I 参照为 0.3125（Silva 等，Computing in Cardiology 2012；PhysioNet Challenge 2012 页面）。这个对照只能作为同一指标下的参考：当年按隐藏的 set C 排名，本地确认集是从合并数据中随机划分的 1,800 例；当年参赛者只有 set A 的 4,000 例标签，本实验训练集有 8,400 例。阈值在验证集上选定后，确认集分数比验证集的 0.547 低约 0.06，说明按单一数据集挑阈值存在乐观偏差。明细见 [`output/challenge2012_event1_score.csv`](output/challenge2012_event1_score.csv)。
+
+两项分析的确认集预测来自 `run_experiment.py` 写出的被 Git 忽略的 `output/data/test_predictions.csv`。逻辑回归经 lbfgs 迭代求解，在不同操作系统或数值库下重跑可能在小数点后第四位出现差异；梯度提升在本仓库设置下可以逐位复现。
+
 ## 结论
 
 第二阶段最稳妥的结论是：简单预处理已经足以支撑当前梯度提升基线，宽松异常清洗、分位数截断、均值填补和原生缺失都没有产生跨模型、跨时间窗的一致增益。逻辑回归在部分时间窗可从清洗与截断中获得小幅改善，但差异落在当前抽样不确定性范围内。缺失与测量频率含有真实预测信息，同时也可能编码医院工作流程，因此后续外部验证时应把这类特征视为潜在的分布漂移来源。
@@ -99,11 +109,14 @@ python Experiments/03_mortality_data_quality/run_experiment.py --data-dir ../rel
 python Experiments/03_mortality_data_quality/analyze_selected_models.py --data-dir ../release
 python Experiments/03_mortality_data_quality/analyze_operating_points.py
 python Experiments/03_mortality_data_quality/plot_results.py
+python Experiments/03_mortality_data_quality/analyze_paired_comparison.py
+python Experiments/03_mortality_data_quality/analyze_challenge_score.py
 python Experiments/03_mortality_data_quality/test_run_experiment.py
 python Experiments/03_mortality_data_quality/test_analyze_operating_points.py
+python Experiments/03_mortality_data_quality/test_analyze_comparisons.py
 ```
 
-主脚本会重新读取 12,000 份 ICU 文件；两项补充分析直接使用被 Git 忽略的 `output/data/feature_profiles.npz`。患者级特征和预测不提交到仓库，聚合指标、图表和运行元数据可以复现本报告中的结论。
+主脚本会重新读取 12,000 份 ICU 文件；各项补充分析直接使用被 Git 忽略的 `output/data/feature_profiles.npz` 和 `output/data/test_predictions.csv`。患者级特征和预测不提交到仓库，聚合指标、图表和运行元数据可以复现本报告中的结论。
 
 ## 课程对齐补充：模型调优、学习曲线与解释
 
