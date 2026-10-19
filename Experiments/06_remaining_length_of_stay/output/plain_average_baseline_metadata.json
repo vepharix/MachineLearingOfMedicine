@@ -1,0 +1,14 @@
+{
+  "target": "Length_of_stay - 2 days",
+  "split_sizes": {
+    "train": 8279,
+    "validation": 1774,
+    "test": 1775
+  },
+  "constant_fitted_on": "training + validation (development) records",
+  "bootstrap_repeats": 1000,
+  "bootstrap_random_state": 72,
+  "bootstrap_note": "same seed and resamples as the cohort_smeared rows of bootstrap_confidence_intervals.csv",
+  "cache_hit": false,
+  "random_state": 42
+}
